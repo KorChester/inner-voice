@@ -162,25 +162,38 @@ export default function App() {
     setError("");
     try {
       if (isSignup) {
-        const data = await sb.auth("signup", {
+        // 1. Registrieren
+        const signupData = await sb.auth("signup", {
           email, password,
           data: { display_name: name, role: "client" }
         });
-        if (data.access_token) {
-          sb.token = data.access_token;
-          // Profil automatisch in iv_profiles erstellen
-          try {
-            const profileTable = await sb.from("iv_profiles");
-            await profileTable.insert({ id: data.user.id, email, display_name: name, role: "client" });
-          } catch (profileErr) {
-            console.log("Profil existiert evtl. schon:", profileErr);
-          }
-          const profile = { id: data.user.id, email, role: "client", display_name: name };
-          setUser(profile);
-          sessionStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, user: profile }));
+        
+        // 2. Direkt danach einloggen
+        let token, userId;
+        if (signupData.access_token) {
+          token = signupData.access_token;
+          userId = signupData.user.id;
         } else {
-          setError("Registrierung erfolgreich! Bitte bestätige deine E-Mail, falls aktiviert.");
+          // Autoconfirm aktiv → direkt einloggen
+          const loginData = await sb.auth("login", { email, password });
+          token = loginData.access_token;
+          userId = loginData.user.id;
         }
+        
+        sb.token = token;
+        
+        // 3. Profil in iv_profiles erstellen
+        try {
+          const profileTable = await sb.from("iv_profiles");
+          await profileTable.insert({ id: userId, email, display_name: name, role: "client" });
+        } catch (profileErr) {
+          console.log("Profil existiert evtl. schon:", profileErr);
+        }
+        
+        const profile = { id: userId, email, role: "client", display_name: name };
+        setUser(profile);
+        sessionStorage.setItem("iv_session", JSON.stringify({ token, user: profile }));
+        
       } else {
         const data = await sb.auth("login", { email, password });
         sb.token = data.access_token;
