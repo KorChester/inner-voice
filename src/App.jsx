@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 
 /* ─────────────────────────────────────────────
    SUPABASE CONFIG
@@ -304,6 +304,8 @@ function AuthScreen({ onAuth, error, view, setView }) {
           {view === "login" ? "Noch kein Konto? Registrieren" : "Schon ein Konto? Anmelden"}
         </button>
       </Card>
+
+      <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: C.textSoft, opacity: 0.4 }}>v{APP_VERSION}</div>
     </div>
   );
 }
