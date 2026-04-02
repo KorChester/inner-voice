@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.7.1";
+const APP_VERSION = "1.7.2";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -35,119 +35,68 @@ const sb = {
 /* ── SEED SCENARIOS (für neue User) ── */
 const SEED_SCENARIOS = [
   { name: "Vor dem Training", icon: "⚡", description: "Mentale Vorbereitung vor der Session.", phrases: [
-    "Ich bin vorbereitet und bereit, alles zu geben.",
     "Mein Körper ist stark, mein Geist ist fokussiert.",
     "Heute werde ich besser als gestern.",
-    "Ich freue mich auf die Herausforderung.",
-    "Jede Session bringt mich meinem Ziel näher.",
-    "Ich bin dankbar, dass ich trainieren kann.",
     "Mein Plan steht. Ich ziehe ihn durch.",
   ]},
   { name: "Während des Trainings", icon: "🔥", description: "Push-Modus. Dranbleiben.", phrases: [
     "Eine Wiederholung nach der anderen.",
     "Der Schmerz ist temporär, der Stolz bleibt.",
-    "Fokus. Technik. Atmung. Weiter.",
-    "Ich bin stärker als mein innerer Schweinehund.",
-    "Genau jetzt wachse ich. In diesem Moment.",
-    "Die letzte Wiederholung zählt am meisten.",
-    "Ich kontrolliere das Gewicht – nicht umgekehrt.",
     "Mein Körper kann mehr als mein Kopf denkt.",
   ]},
   { name: "Bei Rückschlägen", icon: "🛡️", description: "Wenn es nicht läuft wie geplant.", phrases: [
     "Rückschläge sind Teil des Weges, nicht das Ende.",
-    "Ich lerne aus jedem Fehler und wachse daran.",
-    "Auch die besten Athleten haben schlechte Tage.",
     "Das definiert mich nicht. Mein Comeback schon.",
-    "Ich bin nicht perfekt – und das ist okay.",
-    "Jeder Misserfolg bringt mich einer Lösung näher.",
     "Ich falle hin, aber ich stehe immer wieder auf.",
   ]},
   { name: "Selbstvertrauen", icon: "👑", description: "Glaube an dich und deine Fähigkeiten.", phrases: [
     "Ich vertraue meinem Training und meiner Vorbereitung.",
-    "Ich verdiene diesen Erfolg – ich habe dafür gearbeitet.",
-    "Meine Stärke kommt von innen.",
     "Ich bin genug. Genau so wie ich bin.",
-    "Ich habe schon Härteres überstanden.",
-    "Mein Weg hat mich hierher gebracht – und er geht weiter.",
-    "Ich bin nicht hier, um perfekt zu sein. Ich bin hier, um zu wachsen.",
     "Ich glaube an mich, auch wenn es gerade schwer ist.",
   ]},
   { name: "Wettkampftag", icon: "🏆", description: "Kurz vor dem Wettkampf. Anspannung nutzen.", phrases: [
     "Ich habe mich vorbereitet. Ich bin bereit.",
     "Aufregung ist Energie – ich nutze sie für mich.",
     "Ich konzentriere mich auf meinen Prozess, nicht auf das Ergebnis.",
-    "Ich genieße diesen Moment – dafür trainiere ich.",
-    "Ich bin mein eigener Maßstab.",
-    "Was andere tun, ist irrelevant. Ich zeige mein Bestes.",
-    "Ich vertraue meinem Körper. Er weiß, was er tun muss.",
-    "Nervosität bedeutet, dass mir das hier wichtig ist.",
   ]},
   { name: "Motivationstief", icon: "🔋", description: "Keine Lust, Zweifel am Sinn.", phrases: [
     "Motivation kommt und geht – Disziplin bleibt.",
-    "Ich erinnere mich, warum ich angefangen habe.",
-    "Kleine Schritte zählen auch an schweren Tagen.",
     "Ich muss nicht motiviert sein, um anzufangen.",
-    "Jeder Gang ins Training ist ein Sieg über den inneren Schweinehund.",
-    "Es geht nicht darum, wie ich mich fühle – es geht darum, was ich tue.",
     "Heute ist der Tag, an dem andere aufgeben. Ich nicht.",
   ]},
   { name: "Vergleich mit anderen", icon: "👥", description: "Du vergleichst dich ständig.", phrases: [
     "Mein einziger Gegner bin ich von gestern.",
     "Ich kenne ihre Geschichte nicht – nur meine eigene.",
-    "Ihr Erfolg schmälert nicht meinen.",
-    "Vergleiche sind Gift. Mein Weg ist einzigartig.",
-    "Ich feiere meinen eigenen Fortschritt.",
     "Social Media zeigt Highlights, nicht die Realität.",
-    "Ich bin nicht zu spät. Ich bin genau richtig.",
   ]},
   { name: "Regeneration", icon: "🌱", description: "Nach dem Training. Loslassen und aufladen.", phrases: [
     "Ich habe heute mein Bestes gegeben, das reicht.",
     "Erholung ist Teil des Trainings, nicht Schwäche.",
-    "Morgen ist eine neue Chance zu wachsen.",
-    "Mein Körper repariert sich jetzt. Ich gebe ihm die Zeit.",
     "Ich bin stolz auf das, was ich heute geschafft habe.",
-    "Ruhe ist kein Faulenzen – Ruhe ist Strategie.",
   ]},
   { name: "Fokus & Konzentration", icon: "🎯", description: "Ablenkungen loslassen, Präsenz stärken.", phrases: [
     "Jetzt. Hier. Dieser Moment zählt.",
-    "Ich lasse Ablenkungen los und bin ganz präsent.",
-    "Ein Satz, eine Übung, ein Schritt zur Zeit.",
-    "Mein Fokus ist meine Superkraft.",
     "Ich kontrolliere meine Gedanken – nicht umgekehrt.",
     "Was nicht in meiner Kontrolle liegt, lasse ich los.",
-    "Ich bin voll da. Mit jedem Atemzug.",
   ]},
   { name: "Druck von außen", icon: "💬", description: "Erwartungen von Trainer, Familie oder Social Media.", phrases: [
     "Ich trainiere für mich – nicht für die Meinung anderer.",
     "Ich setze meine eigenen Maßstäbe.",
-    "Druck von außen kann mich nicht definieren.",
-    "Ich darf meinen eigenen Weg gehen, in meinem Tempo.",
     "Ihre Erwartungen sind nicht meine Verantwortung.",
-    "Ich höre auf meinen Körper, nicht auf fremde Stimmen.",
   ]},
   { name: "Nach Verletzung", icon: "🩹", description: "Comeback nach einer Verletzungspause.", phrases: [
     "Mein Körper heilt. Ich gebe ihm die Zeit, die er braucht.",
     "Ich komme stärker zurück – mental und physisch.",
-    "Diese Phase macht mich geduldiger und dankbarer.",
     "Ich kann heute das tun, was möglich ist – das ist genug.",
-    "Heilung ist kein Rückschritt, sondern Teil des Weges.",
-    "Ich vergleiche mich nicht mit meinem alten Ich. Ich baue neu auf.",
   ]},
   { name: "Morgenroutine", icon: "☀️", description: "Den Tag mit der richtigen Einstellung starten.", phrases: [
     "Heute ist ein guter Tag, um stärker zu werden.",
-    "Ich stehe auf mit Dankbarkeit und Entschlossenheit.",
     "Ich entscheide, wie dieser Tag wird.",
     "Mein Mindset bestimmt meinen Erfolg.",
-    "Ich bin bereit für alles, was heute kommt.",
-    "Jeder neue Tag ist eine Chance, mich zu beweisen.",
   ]},
   { name: "Selbstzweifel", icon: "🌧️", description: "Wenn du an dir selbst zweifelst.", phrases: [
     "Zweifel sind normal – sie beweisen, dass mir das wichtig ist.",
     "Ich bin nicht meine Gedanken. Ich bin meine Taten.",
-    "Ich habe schon so vieles geschafft, das ich mir nicht zugetraut habe.",
-    "Unsicherheit ist kein Zeichen von Schwäche, sondern von Wachstum.",
-    "Ich muss nicht alles wissen. Ich muss nur anfangen.",
-    "Auch mit Zweifeln kann ich Großes schaffen.",
     "Ich erlaube mir, unperfekt zu sein und trotzdem weiterzumachen.",
   ]},
 ];
