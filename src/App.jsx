@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 
 /* ─────────────────────────────────────────────
    SUPABASE CONFIG
@@ -135,7 +135,7 @@ const Btn = ({ children, onClick, disabled, style }) => (
     {children}
   </button>
 );
-const Label = ({ children }) => <div style={{ fontSize: 10, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{children}</div>;
+const Label = ({ children }) => <div style={{ fontSize: 11, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{children}</div>;
 const inputStyle = { width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: 10, fontSize: 13, resize: "vertical", lineHeight: 1.5, fontFamily: "inherit", boxSizing: "border-box" };
 
 /* ─────────────────────────────────────────────
@@ -270,7 +270,7 @@ function AuthScreen({ onAuth, error, view, setView }) {
       <div style={{ textAlign: "center", marginBottom: 36 }}>
         <svg width="50" height="50" viewBox="0 0 40 40"><rect width="40" height="40" rx="7" fill={C.red}/><text x="7" y="19" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">P</text><text x="7" y="35" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">U</text></svg>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: C.white, marginTop: 12, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2 }}>INNER VOICE</h1>
-        <p style={{ fontSize: 10, color: C.textSoft, letterSpacing: 2, textTransform: "uppercase" }}>by Coach Chang · Physiques Unlimited</p>
+        <p style={{ fontSize: 12, color: C.textSoft, letterSpacing: 2, textTransform: "uppercase" }}>by Coach Chang · Physiques Unlimited</p>
       </div>
 
       <Card style={{ padding: 24 }}>
@@ -305,7 +305,7 @@ function AuthScreen({ onAuth, error, view, setView }) {
         </button>
       </Card>
 
-      <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: C.textSoft, opacity: 0.4 }}>v{APP_VERSION}</div>
+      <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: C.textSoft, opacity: 0.4 }}>v{APP_VERSION}</div>
     </div>
   );
 }
@@ -457,12 +457,12 @@ function MainApp({ user, onLogout }) {
           <svg width="24" height="24" viewBox="0 0 40 40"><rect width="40" height="40" rx="7" fill={C.red}/><text x="7" y="19" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">P</text><text x="7" y="35" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">U</text></svg>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.white }}>INNER VOICE</div>
-            <div style={{ fontSize: 7, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>
+            <div style={{ fontSize: 11, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>
               {user.display_name || user.email} {isCoach && "· COACH"}
             </div>
           </div>
         </div>
-        <button onClick={onLogout} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSoft, fontSize: 10, padding: "4px 10px", cursor: "pointer" }}>Logout</button>
+        <button onClick={onLogout} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSoft, fontSize: 11, padding: "5px 12px", cursor: "pointer" }}>Logout</button>
       </header>
 
       {/* Content */}
@@ -480,9 +480,9 @@ function MainApp({ user, onLogout }) {
       <nav style={{ display: "flex", justifyContent: "space-around", position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: `${C.surface}F5`, borderTop: `1px solid ${C.border}`, padding: "5px 0 10px", zIndex: 100, backdropFilter: "blur(12px)" }}>
         {NAV.map(n => (
           <button key={n.id} onClick={() => setView(n.id)}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, background: "none", border: "none", color: view === n.id ? C.red : C.textSoft, cursor: "pointer", padding: "4px 3px", minWidth: 38 }}>
-            <span style={{ fontSize: 14 }}>{n.icon}</span>
-            <span style={{ fontSize: 7, fontWeight: view === n.id ? 600 : 400 }}>{n.label}</span>
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", color: view === n.id ? C.red : C.textSoft, cursor: "pointer", padding: "4px 5px", minWidth: 44 }}>
+            <span style={{ fontSize: 17 }}>{n.icon}</span>
+            <span style={{ fontSize: 9, fontWeight: view === n.id ? 600 : 400 }}>{n.label}</span>
           </button>
         ))}
       </nav>
@@ -506,7 +506,7 @@ function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, is
         {[{ v: streak, l: "Streak", dot: doneToday }, { v: total, l: "Sätze" }, { v: reframeCount, l: "Reframes" }, { v: journalCount, l: "Journal" }].map((s, i) => (
           <Card key={i} style={{ padding: "12px 6px", textAlign: "center", position: "relative" }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{s.v}</div>
-            <div style={{ fontSize: 8, color: C.textSoft, textTransform: "uppercase" }}>{s.l}</div>
+            <div style={{ fontSize: 12, color: C.textSoft, textTransform: "uppercase" }}>{s.l}</div>
             {s.dot && <div style={{ position: "absolute", top: 5, right: 5, width: 5, height: 5, borderRadius: 3, background: C.green }} />}
           </Card>
         ))}
@@ -524,17 +524,17 @@ function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, is
           <button key={i} onClick={() => go(a.v)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 12px", cursor: "pointer", textAlign: "left" }}>
             <div style={{ fontSize: 18, marginBottom: 4 }}>{a.icon}</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.white }}>{a.label}</div>
-            <div style={{ fontSize: 10, color: C.textSoft, marginTop: 2 }}>{a.desc}</div>
+            <div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>{a.desc}</div>
           </button>
         ))}
       </div>
 
       <Card style={{ padding: "16px 18px", textAlign: "center", borderTop: `2px solid ${C.red}` }}>
         <p style={{ fontSize: 13, fontStyle: "italic", color: C.textMid, lineHeight: 1.6 }}>"Der wichtigste Mensch, mit dem du je reden wirst, bist du selbst."</p>
-        <div style={{ fontSize: 9, color: C.textSoft, marginTop: 6, letterSpacing: 1.5, textTransform: "uppercase" }}>— Coach Chang</div>
+        <div style={{ fontSize: 11, color: C.textSoft, marginTop: 6, letterSpacing: 1.5, textTransform: "uppercase" }}>— Coach Chang</div>
       </Card>
 
-      <div style={{ textAlign: "center", marginTop: 16, fontSize: 10, color: C.textSoft, opacity: 0.4 }}>v{APP_VERSION}</div>
+      <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: C.textSoft, opacity: 0.4 }}>v{APP_VERSION}</div>
     </div>
   );
 }
@@ -587,7 +587,7 @@ function LibraryView({ cats, setCats, userId, reload }) {
                 <span style={{ fontSize: 18 }}>{cat.icon}</span>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.white }}>{cat.name}</div>
-                  <div style={{ fontSize: 10, color: C.textSoft }}>{active}/{cat.phrases.length} aktiv</div>
+                  <div style={{ fontSize: 12, color: C.textSoft }}>{active}/{cat.phrases.length} aktiv</div>
                 </div>
               </div>
               <span style={{ color: C.textSoft, fontSize: 12, display: "inline-block", transform: isOpen ? "rotate(180deg)" : "none" }}>▾</span>
@@ -649,7 +649,7 @@ function PracticeView({ cats, record }) {
                 style={{ background: sel ? C.redSoft : C.card, border: `1px solid ${sel ? C.red : C.border}`, borderRadius: 10, padding: 12, cursor: "pointer", textAlign: "center" }}>
                 <span style={{ fontSize: 22 }}>{cat.icon}</span>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.white, marginTop: 4 }}>{cat.name}</div>
-                <div style={{ fontSize: 10, color: C.textSoft, marginTop: 2 }}>{n} Sätze</div>
+                <div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>{n} Sätze</div>
               </button>
             );
           })}
@@ -673,7 +673,7 @@ function PracticeView({ cats, record }) {
           </div>
           <span style={{ fontSize: 11, color: C.textSoft }}>{idx + 1}/{phrases.length}</span>
         </div>
-        <div style={{ fontSize: 10, color: C.red, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{p.cat}</div>
+        <div style={{ fontSize: 12, color: C.red, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{p.cat}</div>
         <Card style={{ padding: "28px 18px", textAlign: "center", marginBottom: 16, borderTop: `2px solid ${C.red}` }}>
           <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.5, color: C.white }}>"{p.text}"</div>
         </Card>
@@ -794,7 +794,7 @@ function ScenariosViewComp({ scenarios, setScenarios, userId, record, reload }) 
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: "4px 0", color: C.white, fontFamily: "'Bebas Neue', sans-serif" }}>{sit.name.toUpperCase()}</h2>
         </div>
         <Card style={{ padding: "24px 16px", textAlign: "center", marginBottom: 14, borderTop: `2px solid ${C.red}` }}>
-          <div style={{ fontSize: 9, color: C.textSoft, marginBottom: 10 }}>SATZ {idx + 1}/{phrases.length}</div>
+          <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 10 }}>SATZ {idx + 1}/{phrases.length}</div>
           <div style={{ fontSize: 17, fontWeight: 600, color: C.white, lineHeight: 1.5 }}>"{phrases[idx].text}"</div>
         </Card>
         {idx < phrases.length - 1
@@ -826,12 +826,12 @@ function ScenariosViewComp({ scenarios, setScenarios, userId, record, reload }) 
           <div key={s.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
             <span style={{ fontSize: 24 }}>{s.icon}</span>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.white, marginTop: 4 }}>{s.name}</div>
-            <div style={{ fontSize: 9, color: C.red, marginTop: 4 }}>{s.phrases.length} Sätze</div>
+            <div style={{ fontSize: 11, color: C.red, marginTop: 4 }}>{s.phrases.length} Sätze</div>
             <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
               <button onClick={() => { setActive(s.id); setIdx(0); setPhase("practice"); }}
-                style={{ flex: 1, padding: 6, background: C.red, border: "none", borderRadius: 5, color: C.white, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Üben</button>
+                style={{ flex: 1, padding: 6, background: C.red, border: "none", borderRadius: 5, color: C.white, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Üben</button>
               <button onClick={() => { setActive(s.id); setPhase("edit"); }}
-                style={{ flex: 1, padding: 6, background: "none", border: `1px solid ${C.border}`, borderRadius: 5, color: C.textMid, fontSize: 10, cursor: "pointer" }}>Edit</button>
+                style={{ flex: 1, padding: 6, background: "none", border: `1px solid ${C.border}`, borderRadius: 5, color: C.textMid, fontSize: 12, cursor: "pointer" }}>Edit</button>
             </div>
           </div>
         ))}
@@ -882,7 +882,7 @@ function ReframerView({ reframes, setReframes, userId, record }) {
           <div style={{ fontSize: 12, color: "#F87171" }}>🔴 {ex.neg}</div>
           <div style={{ fontSize: 12, color: "#6EE7B7" }}>🟢 {ex.pos}</div>
           <button onClick={() => { setNeg(ex.neg); setPos(ex.pos); setShowEx(false); }}
-            style={{ marginTop: 5, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, color: C.textSoft, padding: "3px 8px", fontSize: 10, cursor: "pointer" }}>Verwenden</button>
+            style={{ marginTop: 5, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, color: C.textSoft, padding: "3px 8px", fontSize: 12, cursor: "pointer" }}>Verwenden</button>
         </Card>
       ))}
       {reframes.length > 0 && (
@@ -890,7 +890,7 @@ function ReframerView({ reframes, setReframes, userId, record }) {
           <Label>Gespeichert ({reframes.length})</Label>
           {reframes.slice(0, 12).map(r => (
             <Card key={r.id} style={{ padding: 10, marginBottom: 6 }}>
-              <div style={{ fontSize: 9, color: C.textSoft, marginBottom: 4 }}>{new Date(r.created_at).toLocaleDateString("de-DE")}</div>
+              <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4 }}>{new Date(r.created_at).toLocaleDateString("de-DE")}</div>
               <div style={{ fontSize: 12, color: "#F87171" }}>🔴 {r.negative_text}</div>
               <div style={{ fontSize: 12, color: "#6EE7B7" }}>🟢 {r.positive_text}</div>
             </Card>
@@ -958,8 +958,8 @@ function JournalComp({ journal, setJournal, userId, record }) {
             <Card key={entry.id} style={{ padding: 10, marginBottom: 6 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                 <span style={{ fontSize: 14 }}>{MOODS.find(m => m.v === entry.mood)?.e}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: TYPES.find(t => t.v === entry.self_talk_type)?.c }}>{TYPES.find(t => t.v === entry.self_talk_type)?.l}</span>
-                <span style={{ fontSize: 9, color: C.textSoft, marginLeft: "auto" }}>{new Date(entry.created_at).toLocaleDateString("de-DE")}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: TYPES.find(t => t.v === entry.self_talk_type)?.c }}>{TYPES.find(t => t.v === entry.self_talk_type)?.l}</span>
+                <span style={{ fontSize: 11, color: C.textSoft, marginLeft: "auto" }}>{new Date(entry.created_at).toLocaleDateString("de-DE")}</span>
               </div>
               <p style={{ fontSize: 12, color: C.textMid, lineHeight: 1.5 }}>{entry.text}</p>
             </Card>
@@ -1014,9 +1014,9 @@ function CoachDashboard({ clients }) {
         </Card>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
-          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.sessions.length}</div><div style={{ fontSize: 8, color: C.textSoft }}>SESSIONS</div></Card>
-          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.reframes.length}</div><div style={{ fontSize: 8, color: C.textSoft }}>REFRAMES</div></Card>
-          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.journal.length}</div><div style={{ fontSize: 8, color: C.textSoft }}>JOURNAL</div></Card>
+          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.sessions.length}</div><div style={{ fontSize: 12, color: C.textSoft }}>SESSIONS</div></Card>
+          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.reframes.length}</div><div style={{ fontSize: 12, color: C.textSoft }}>REFRAMES</div></Card>
+          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.journal.length}</div><div style={{ fontSize: 12, color: C.textSoft }}>JOURNAL</div></Card>
         </div>
 
         {clientData.journal.length > 0 && (
@@ -1026,8 +1026,8 @@ function CoachDashboard({ clients }) {
               <Card key={e.id} style={{ padding: 10, marginBottom: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                   <span>{MOODS[e.mood]}</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: e.self_talk_type === "positive" ? C.green : e.self_talk_type === "negative" ? "#F87171" : C.textSoft }}>{e.self_talk_type}</span>
-                  <span style={{ fontSize: 9, color: C.textSoft, marginLeft: "auto" }}>{new Date(e.created_at).toLocaleDateString("de-DE")}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: e.self_talk_type === "positive" ? C.green : e.self_talk_type === "negative" ? "#F87171" : C.textSoft }}>{e.self_talk_type}</span>
+                  <span style={{ fontSize: 11, color: C.textSoft, marginLeft: "auto" }}>{new Date(e.created_at).toLocaleDateString("de-DE")}</span>
                 </div>
                 <p style={{ fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>{e.text}</p>
               </Card>
