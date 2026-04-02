@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.4.1";
+const APP_VERSION = "1.5.2";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -32,21 +32,50 @@ const sb = {
   }
 };
 
-/* ── SEED DATA ── */
-const SEED_CATEGORIES = [
-  { name: "Vor dem Training", icon: "⚡", sort_order: 0, phrases: ["Ich bin vorbereitet und bereit, alles zu geben.", "Mein Körper ist stark, mein Geist ist fokussiert.", "Heute werde ich besser als gestern."] },
-  { name: "Während des Trainings", icon: "🔥", sort_order: 1, phrases: ["Eine Wiederholung nach der anderen.", "Der Schmerz ist temporär, der Stolz bleibt.", "Fokus. Technik. Atmung. Weiter."] },
-  { name: "Bei Rückschlägen", icon: "🛡️", sort_order: 2, phrases: ["Rückschläge sind Teil des Weges, nicht das Ende.", "Ich lerne aus jedem Fehler und wachse daran.", "Auch die besten Athleten haben schlechte Tage."] },
-  { name: "Selbstvertrauen", icon: "👑", sort_order: 3, phrases: ["Ich vertraue meinem Training.", "Ich verdiene diesen Erfolg.", "Meine Stärke kommt von innen."] },
-  { name: "Fokus & Konzentration", icon: "🎯", sort_order: 4, phrases: ["Jetzt. Hier. Dieser Moment zählt.", "Ich lasse Ablenkungen los."] },
-  { name: "Regeneration", icon: "🌱", sort_order: 5, phrases: ["Ich habe heute mein Bestes gegeben.", "Erholung ist Teil des Trainings."] },
-];
+/* ── SEED SCENARIOS (für neue User) ── */
 const SEED_SCENARIOS = [
-  { name: "Wettkampftag", icon: "🏆", description: "Kurz vor dem Wettkampf.", phrases: ["Ich habe mich vorbereitet. Ich bin bereit.", "Aufregung ist Energie – ich nutze sie für mich.", "Ich konzentriere mich auf meinen Prozess."] },
-  { name: "Leistungsplateau", icon: "📊", description: "Seit Wochen keine Fortschritte.", phrases: ["Plateaus zeigen, dass mein Körper sich anpasst.", "Ich vertraue dem Prozess."] },
-  { name: "Motivationstief", icon: "🔋", description: "Keine Lust, Zweifel am Sinn.", phrases: ["Motivation kommt und geht – Disziplin bleibt.", "Ich erinnere mich, warum ich angefangen habe."] },
-  { name: "Vergleich mit anderen", icon: "👥", description: "Du vergleichst dich ständig.", phrases: ["Mein einziger Gegner bin ich von gestern.", "Ich kenne ihre Geschichte nicht."] },
+  { name: "Vor dem Training", icon: "⚡", description: "Mentale Vorbereitung vor der Session.", phrases: [
+    "Ich bin vorbereitet und bereit, alles zu geben.",
+    "Mein Körper ist stark, mein Geist ist fokussiert.",
+    "Heute werde ich besser als gestern.",
+  ]},
+  { name: "Während des Trainings", icon: "🔥", description: "Push-Modus. Dranbleiben.", phrases: [
+    "Eine Wiederholung nach der anderen.",
+    "Der Schmerz ist temporär, der Stolz bleibt.",
+    "Fokus. Technik. Atmung. Weiter.",
+  ]},
+  { name: "Bei Rückschlägen", icon: "🛡️", description: "Wenn es nicht läuft wie geplant.", phrases: [
+    "Rückschläge sind Teil des Weges, nicht das Ende.",
+    "Ich lerne aus jedem Fehler und wachse daran.",
+    "Auch die besten Athleten haben schlechte Tage.",
+  ]},
+  { name: "Selbstvertrauen", icon: "👑", description: "Glaube an dich und deine Fähigkeiten.", phrases: [
+    "Ich vertraue meinem Training und meiner Vorbereitung.",
+    "Ich verdiene diesen Erfolg – ich habe dafür gearbeitet.",
+    "Meine Stärke kommt von innen.",
+  ]},
+  { name: "Wettkampftag", icon: "🏆", description: "Kurz vor dem Wettkampf. Anspannung nutzen.", phrases: [
+    "Ich habe mich vorbereitet. Ich bin bereit.",
+    "Aufregung ist Energie – ich nutze sie für mich.",
+    "Ich konzentriere mich auf meinen Prozess, nicht auf das Ergebnis.",
+  ]},
+  { name: "Motivationstief", icon: "🔋", description: "Keine Lust, Zweifel am Sinn.", phrases: [
+    "Motivation kommt und geht – Disziplin bleibt.",
+    "Ich erinnere mich, warum ich angefangen habe.",
+    "Kleine Schritte zählen auch an schweren Tagen.",
+  ]},
+  { name: "Vergleich mit anderen", icon: "👥", description: "Du vergleichst dich ständig.", phrases: [
+    "Mein einziger Gegner bin ich von gestern.",
+    "Ich kenne ihre Geschichte nicht – nur meine eigene.",
+    "Ihr Erfolg schmälert nicht meinen.",
+  ]},
+  { name: "Regeneration", icon: "🌱", description: "Nach dem Training. Loslassen.", phrases: [
+    "Ich habe heute mein Bestes gegeben, das reicht.",
+    "Erholung ist Teil des Trainings, nicht Schwäche.",
+    "Morgen ist eine neue Chance zu wachsen.",
+  ]},
 ];
+
 const REFRAME_EXAMPLES = [
   { neg: "Ich schaffe das nie.", pos: "Ich schaffe das Schritt für Schritt." },
   { neg: "Alle sind besser als ich.", pos: "Ich bin auf meinem eigenen Weg." },
@@ -55,7 +84,7 @@ const REFRAME_EXAMPLES = [
 ];
 
 /* ── DESIGN ── */
-const C = { bg: "#0A0A0A", surface: "#131313", card: "#1A1A1A", border: "#262626", borderLight: "#333333", red: "#DC2626", redSoft: "#DC262620", white: "#FFFFFF", text: "#F0F0F0", textMid: "#BBBBBB", textSoft: "#888888", green: "#22C55E", greenSoft: "#22C55E20" };
+const C = { bg: "#0A0A0A", surface: "#131313", card: "#1A1A1A", border: "#262626", borderLight: "#333333", red: "#DC2626", redSoft: "#DC262620", white: "#FFFFFF", text: "#F0F0F0", textMid: "#BBBBBB", textSoft: "#888888", green: "#22C55E" };
 const Card = ({ children, style }) => <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, ...style }}>{children}</div>;
 const Btn = ({ children, onClick, disabled, style }) => <button onClick={onClick} disabled={disabled} style={{ width: "100%", padding: "13px 16px", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 15, cursor: disabled ? "default" : "pointer", background: C.red, color: C.white, opacity: disabled ? 0.3 : 1, fontFamily: "inherit", ...style }}>{children}</button>;
 const Label = ({ children }) => <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{children}</div>;
@@ -71,9 +100,18 @@ export default function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("iv_session");
-    if (saved) { try { const s = JSON.parse(saved); sb.token = s.token; setUser(s.user); } catch {} }
-    setLoading(false);
+    const saved = localStorage.getItem("iv_session");
+    if (saved) {
+      try {
+        const s = JSON.parse(saved);
+        sb.token = s.token;
+        // Verify token is still valid
+        fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${s.token}` } })
+          .then(r => { if (r.ok) { setUser(s.user); } else { localStorage.removeItem("iv_session"); sb.token = null; } })
+          .catch(() => { localStorage.removeItem("iv_session"); sb.token = null; })
+          .finally(() => setLoading(false));
+      } catch { setLoading(false); }
+    } else { setLoading(false); }
   }, []);
 
   const handleAuth = async (email, password, name, isSignup) => {
@@ -81,14 +119,13 @@ export default function App() {
     try {
       if (isSignup) {
         await sb.auth("signup", { email, password, data: { display_name: name, role: "client" } });
-        // Auto-login nach Signup
         let loginData;
         try { loginData = await sb.auth("login", { email, password }); } catch { setError("Registrierung erfolgreich! Bitte melde dich jetzt an."); return; }
         sb.token = loginData.access_token;
         try { const pt = await sb.from("iv_profiles"); await pt.insert({ id: loginData.user.id, email, display_name: name, role: "client" }); } catch {}
         const profile = { id: loginData.user.id, email, role: "client", display_name: name };
         setUser(profile);
-        sessionStorage.setItem("iv_session", JSON.stringify({ token: loginData.access_token, user: profile }));
+        localStorage.setItem("iv_session", JSON.stringify({ token: loginData.access_token, user: profile }));
       } else {
         const data = await sb.auth("login", { email, password });
         sb.token = data.access_token;
@@ -97,12 +134,12 @@ export default function App() {
         if (!profiles?.length) { try { await pt.insert({ id: data.user.id, email, display_name: email.split("@")[0], role: "client" }); profiles = await pt.select("*", `&id=eq.${data.user.id}`); } catch {} }
         const profile = profiles[0] || { id: data.user.id, email, role: "client", display_name: email.split("@")[0] };
         setUser(profile);
-        sessionStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, user: profile }));
+        localStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, user: profile }));
       }
     } catch (err) { setError(err.message); }
   };
 
-  const handleLogout = () => { sb.signOut(); setUser(null); sessionStorage.removeItem("iv_session"); };
+  const handleLogout = () => { sb.signOut(); setUser(null); localStorage.removeItem("iv_session"); };
 
   if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, fontFamily: "'Outfit', sans-serif", color: C.textSoft }}>Laden...</div>;
 
@@ -143,7 +180,7 @@ function AuthScreen({ onAuth, error, view, setView }) {
 /* ── MAIN APP (after login) ── */
 function MainApp({ user, onLogout }) {
   const [view, setView] = useState("home");
-  const [cats, setCats] = useState([]); const [scenarios, setScenarios] = useState([]);
+  const [scenarios, setScenarios] = useState([]);
   const [journal, setJournal] = useState([]); const [reframes, setReframes] = useState([]);
   const [sessions, setSessions] = useState([]); const [loading, setLoading] = useState(true);
   const [coachClients, setCoachClients] = useState([]);
@@ -154,26 +191,37 @@ function MainApp({ user, onLogout }) {
   const loadData = async () => {
     try {
       const uid = `&user_id=eq.${user.id}`;
-      const [catT, phraseT, scenT, scenPT, refT, journalT, sessionT] = await Promise.all(
-        ["iv_categories", "iv_phrases", "iv_scenarios", "iv_scenario_phrases", "iv_reframes", "iv_journal", "iv_practice_sessions"].map(t => sb.from(t))
+      const [scenT, scenPT, refT, journalT, sessionT] = await Promise.all(
+        ["iv_scenarios", "iv_scenario_phrases", "iv_reframes", "iv_journal", "iv_practice_sessions"].map(t => sb.from(t))
       );
-      let [rawCats, rawPhrases, rawScens, rawScenP, rawRef, rawJ, rawS] = await Promise.all([
-        catT.select("*", uid + "&order=sort_order.asc"), phraseT.select("*", uid), scenT.select("*", uid), scenPT.select("*", uid),
+      let [rawScens, rawScenP, rawRef, rawJ, rawS] = await Promise.all([
+        scenT.select("*", uid), scenPT.select("*", uid),
         refT.select("*", uid + "&order=created_at.desc"), journalT.select("*", uid + "&order=created_at.desc"), sessionT.select("*", uid + "&order=created_at.desc")
       ]);
-      if (!rawCats.length) { await seedDefaults(user.id); const r = await Promise.all([catT.select("*", uid + "&order=sort_order.asc"), phraseT.select("*", uid), scenT.select("*", uid), scenPT.select("*", uid)]); rawCats = r[0]; rawPhrases = r[1]; rawScens = r[2]; rawScenP = r[3]; }
-      setCats(rawCats.map(c => ({ ...c, phrases: rawPhrases.filter(p => p.category_id === c.id) })));
+      if (!rawScens.length) {
+        await seedDefaults(user.id);
+        rawScens = await scenT.select("*", uid);
+        rawScenP = await scenPT.select("*", uid);
+      }
       setScenarios(rawScens.map(s => ({ ...s, phrases: rawScenP.filter(p => p.scenario_id === s.id) })));
       setReframes(rawRef); setJournal(rawJ); setSessions(rawS);
       if (isCoach) { const pt = await sb.from("iv_profiles"); setCoachClients(await pt.select("*", "&role=eq.client")); }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      if (err.message?.includes("JWT") || err.message?.includes("token")) {
+        localStorage.removeItem("iv_session"); sb.token = null; window.location.reload(); return;
+      }
+    }
     setLoading(false);
   };
 
   const seedDefaults = async (uid) => {
-    const [catT, phraseT, scenT, scenPT] = await Promise.all(["iv_categories", "iv_phrases", "iv_scenarios", "iv_scenario_phrases"].map(t => sb.from(t)));
-    for (const s of SEED_CATEGORIES) { const [c] = await catT.insert({ user_id: uid, name: s.name, icon: s.icon, sort_order: s.sort_order }); for (const t of s.phrases) await phraseT.insert({ user_id: uid, category_id: c.id, text: t, is_active: true }); }
-    for (const s of SEED_SCENARIOS) { const [sc] = await scenT.insert({ user_id: uid, name: s.name, icon: s.icon, description: s.description }); for (const t of s.phrases) await scenPT.insert({ user_id: uid, scenario_id: sc.id, text: t }); }
+    const scenT = await sb.from("iv_scenarios");
+    const scenPT = await sb.from("iv_scenario_phrases");
+    for (const s of SEED_SCENARIOS) {
+      const [sc] = await scenT.insert({ user_id: uid, name: s.name, icon: s.icon, description: s.description });
+      for (const t of s.phrases) await scenPT.insert({ user_id: uid, scenario_id: sc.id, text: t });
+    }
   };
 
   const recordSession = async (type, count) => { try { const t = await sb.from("iv_practice_sessions"); const [s] = await t.insert({ user_id: user.id, session_type: type, phrases_count: count }); setSessions(p => [s, ...p]); } catch {} };
@@ -189,16 +237,20 @@ function MainApp({ user, onLogout }) {
   };
 
   const { streak, doneToday } = calcStreak();
+  const totalPhrases = scenarios.reduce((s, sc) => s + sc.phrases.length, 0);
+
   const NAV = [
-    { id: "home", icon: "◈", label: "Home" }, { id: "library", icon: "✦", label: "Sätze" },
-    { id: "practice", icon: "▶", label: "Praxis" }, { id: "reframer", icon: "⟲", label: "Reframe" },
-    { id: "journal", icon: "✎", label: "Journal" }, ...(isCoach ? [{ id: "coach", icon: "👁", label: "Coach" }] : []),
+    { id: "home", icon: "◈", label: "Home" },
+    { id: "practice", icon: "▶", label: "Praxis" },
+    { id: "reframer", icon: "⟲", label: "Reframe" },
+    { id: "journal", icon: "✎", label: "Journal" },
+    ...(isCoach ? [{ id: "coach", icon: "👁", label: "Coach" }] : []),
   ];
 
   if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, color: C.textSoft }}>Daten werden geladen...</div>;
 
   return (
-    <div style={{ paddingBottom: 75 }}>
+    <div style={{ paddingBottom: 82 }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: C.bg, position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <svg width="24" height="24" viewBox="0 0 40 40"><rect width="40" height="40" rx="7" fill={C.red}/><text x="7" y="19" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">P</text><text x="7" y="35" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">U</text></svg>
@@ -208,19 +260,18 @@ function MainApp({ user, onLogout }) {
       </header>
 
       <main>
-        {view === "home" && <HomeView streak={streak} doneToday={doneToday} total={cats.reduce((s, c) => s + c.phrases.length, 0)} reframeCount={reframes.length} journalCount={journal.length} go={setView} isCoach={isCoach} />}
-        {view === "library" && <LibraryView cats={cats} userId={user.id} reload={loadData} />}
-        {view === "practice" && <PraxisView cats={cats} scenarios={scenarios} setScenarios={setScenarios} userId={user.id} record={recordSession} reload={loadData} />}
-        {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} reload={loadData} />}
+        {view === "home" && <HomeView streak={streak} doneToday={doneToday} scenarioCount={scenarios.length} totalPhrases={totalPhrases} reframeCount={reframes.length} journalCount={journal.length} go={setView} isCoach={isCoach} />}
+        {view === "practice" && <PraxisView scenarios={scenarios} userId={user.id} record={recordSession} reload={loadData} />}
+        {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "coach" && isCoach && <CoachDashboard clients={coachClients} />}
       </main>
 
-      <nav style={{ display: "flex", justifyContent: "space-around", position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: `${C.surface}F5`, borderTop: `1px solid ${C.border}`, padding: "6px 0 12px", zIndex: 100, backdropFilter: "blur(12px)" }}>
+      <nav style={{ display: "flex", justifyContent: "space-around", position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: `${C.surface}F5`, borderTop: `1px solid ${C.border}`, padding: "8px 0 14px", zIndex: 100, backdropFilter: "blur(12px)" }}>
         {NAV.map(n => (
-          <button key={n.id} onClick={() => setView(n.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", color: view === n.id ? C.red : C.textSoft, cursor: "pointer", padding: "4px 6px", minWidth: 50 }}>
-            <span style={{ fontSize: 20 }}>{n.icon}</span>
-            <span style={{ fontSize: 11, fontWeight: view === n.id ? 600 : 400 }}>{n.label}</span>
+          <button key={n.id} onClick={() => setView(n.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", color: view === n.id ? C.red : C.textSoft, cursor: "pointer", padding: "4px 8px", minWidth: 56 }}>
+            <span style={{ fontSize: 22 }}>{n.icon}</span>
+            <span style={{ fontSize: 12, fontWeight: view === n.id ? 600 : 400 }}>{n.label}</span>
           </button>
         ))}
       </nav>
@@ -229,7 +280,7 @@ function MainApp({ user, onLogout }) {
 }
 
 /* ── HOME ── */
-function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, isCoach }) {
+function HomeView({ streak, doneToday, scenarioCount, totalPhrases, reframeCount, journalCount, go, isCoach }) {
   const h = new Date().getHours();
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
   return (
@@ -240,7 +291,7 @@ function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, is
         <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.5 }}>Trainiere deinen inneren Dialog bewusst.</p>
       </Card>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-        {[{ v: streak, l: "Streak", dot: doneToday }, { v: total, l: "Sätze" }, { v: reframeCount, l: "Reframes" }, { v: journalCount, l: "Journal" }].map((s, i) => (
+        {[{ v: streak, l: "Streak", dot: doneToday }, { v: scenarioCount, l: "Szenarien" }, { v: reframeCount, l: "Reframes" }, { v: journalCount, l: "Journal" }].map((s, i) => (
           <Card key={i} style={{ padding: "12px 6px", textAlign: "center", position: "relative" }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{s.v}</div>
             <div style={{ fontSize: 10, color: C.textSoft, textTransform: "uppercase" }}>{s.l}</div>
@@ -250,7 +301,7 @@ function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, is
       </div>
       <Label>Schnellstart</Label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 22 }}>
-        {[{ icon: "▶", label: "Praxis", desc: "Sätze & Szenarien üben", v: "practice" }, { icon: "⟲", label: "Reframe", desc: "Gedanken umdrehen", v: "reframer" }, { icon: "✎", label: "Journal", desc: "Eintrag schreiben", v: "journal" }, ...(isCoach ? [{ icon: "👁", label: "Coach", desc: "Klienten ansehen", v: "coach" }] : [])].map((a, i) => (
+        {[{ icon: "▶", label: "Praxis", desc: "Szenarien üben", v: "practice" }, { icon: "⟲", label: "Reframe", desc: "Gedanken umdrehen", v: "reframer" }, { icon: "✎", label: "Journal", desc: "Eintrag schreiben", v: "journal" }, ...(isCoach ? [{ icon: "👁", label: "Coach", desc: "Klienten ansehen", v: "coach" }] : [])].map((a, i) => (
           <button key={i} onClick={() => go(a.v)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 12px", cursor: "pointer", textAlign: "left" }}>
             <div style={{ fontSize: 20, marginBottom: 4 }}>{a.icon}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{a.label}</div>
@@ -262,76 +313,33 @@ function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, is
         <p style={{ fontSize: 14, fontStyle: "italic", color: C.textMid, lineHeight: 1.6 }}>"Der wichtigste Mensch, mit dem du je reden wirst, bist du selbst."</p>
         <div style={{ fontSize: 11, color: C.textSoft, marginTop: 6, letterSpacing: 1.5, textTransform: "uppercase" }}>— Coach Chang</div>
       </Card>
-      <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: C.textSoft, opacity: 0.5 }}>v{APP_VERSION}</div>
+      <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: C.textSoft, opacity: 0.5 }}>v{APP_VERSION} · made by Chang</div>
     </div>
   );
 }
 
-/* ── LIBRARY ── */
-function LibraryView({ cats, userId, reload }) {
-  const [open, setOpen] = useState(null); const [newT, setNewT] = useState(""); const [adding, setAdding] = useState(null);
-  const addPhrase = async (catId) => { if (!newT.trim()) return; try { const t = await sb.from("iv_phrases"); await t.insert({ user_id: userId, category_id: catId, text: newT.trim(), is_active: true }); setNewT(""); setAdding(null); reload(); } catch {} };
-  const togglePhrase = async (p) => { try { const t = await sb.from("iv_phrases"); await t.update({ is_active: !p.is_active }, { id: p.id }); reload(); } catch {} };
-  const deletePhrase = async (id) => { try { const t = await sb.from("iv_phrases"); await t.delete({ id }); reload(); } catch {} };
-
-  return (
-    <div style={{ padding: 16 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>SELF-TALK BIBLIOTHEK</h2>
-      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Deine Sätze für jede Situation.</p>
-      {cats.map(cat => {
-        const isOpen = open === cat.id; const active = cat.phrases.filter(p => p.is_active).length;
-        return (
-          <Card key={cat.id} style={{ marginBottom: 8, overflow: "hidden" }}>
-            <button onClick={() => setOpen(isOpen ? null : cat.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 14px", width: "100%", background: "none", border: "none", color: C.text, cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 18 }}>{cat.icon}</span>
-                <div style={{ textAlign: "left" }}><div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{cat.name}</div><div style={{ fontSize: 12, color: C.textSoft }}>{active}/{cat.phrases.length} aktiv</div></div>
-              </div>
-              <span style={{ color: C.textSoft, fontSize: 13, display: "inline-block", transform: isOpen ? "rotate(180deg)" : "none" }}>▾</span>
-            </button>
-            {isOpen && (
-              <div style={{ padding: "0 14px 12px" }}>
-                {cat.phrases.map(p => (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: `1px solid ${C.border}`, opacity: p.is_active ? 1 : 0.35 }}>
-                    <button onClick={() => togglePhrase(p)} style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: p.is_active ? C.red : C.borderLight, color: C.white, fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{p.is_active ? "✓" : ""}</button>
-                    <span style={{ fontSize: 14, flex: 1, lineHeight: 1.4, color: C.text }}>{p.text}</span>
-                    <button onClick={() => deletePhrase(p.id)} style={{ background: "none", border: "none", color: C.textSoft, cursor: "pointer", fontSize: 12, padding: 3 }}>✕</button>
-                  </div>
-                ))}
-                {adding === cat.id ? (
-                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                    <input value={newT} onChange={e => setNewT(e.target.value)} onKeyDown={e => e.key === "Enter" && addPhrase(cat.id)} placeholder="Neuen Satz..." autoFocus style={{ ...inputStyle, flex: 1, padding: "8px 10px", fontSize: 13 }} />
-                    <button onClick={() => addPhrase(cat.id)} style={{ width: 34, height: 34, borderRadius: 6, border: "none", background: C.red, color: C.white, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setAdding(cat.id)} style={{ width: "100%", padding: 9, marginTop: 8, background: "none", border: `1px dashed ${C.borderLight}`, borderRadius: 6, color: C.textSoft, fontSize: 12, cursor: "pointer" }}>+ Satz hinzufügen</button>
-                )}
-              </div>
-            )}
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ── PRAXIS (merged categories + scenarios) ── */
-function PraxisView({ cats, scenarios, setScenarios, userId, record, reload }) {
-  const [mode, setMode] = useState("select"); // select, go, done, editScen, addScen
-  const [source, setSource] = useState("categories"); // categories or scenarios
-  const [selCats, setSelCats] = useState([]);
+/* ── PRAXIS (Szenarien wählen → Sätze üben) ── */
+function PraxisView({ scenarios, userId, record, reload }) {
+  const [mode, setMode] = useState("select"); // select, multiSelect, go, done, editScen, addScen
   const [activeSit, setActiveSit] = useState(null);
+  const [selScens, setSelScens] = useState([]);
   const [idx, setIdx] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
   const [newPhrase, setNewPhrase] = useState("");
   const [newScen, setNewScen] = useState({ name: "", icon: "📌", description: "" });
 
-  const catPhrases = selCats.flatMap(cid => { const c = cats.find(x => x.id === cid); return c ? c.phrases.filter(p => p.is_active).map(p => ({ ...p, cat: c.name })) : []; });
   const sit = scenarios.find(s => s.id === activeSit);
   const sitPhrases = sit?.phrases || [];
-  const activePhrases = source === "categories" ? catPhrases : sitPhrases;
 
-  const reset = () => { setMode("select"); setSelCats([]); setActiveSit(null); setIdx(0); setNewPhrase(""); };
+  // Multi-select: combine phrases from multiple scenarios
+  const multiPhrases = selScens.flatMap(sid => {
+    const s = scenarios.find(x => x.id === sid);
+    return s ? s.phrases.map(p => ({ ...p, scenName: s.name })) : [];
+  });
+
+  const activePhrases = mode === "go" && selScens.length > 0 ? multiPhrases : sitPhrases;
+
+  const reset = () => { setMode("select"); setSelScens([]); setActiveSit(null); setIdx(0); setNewPhrase(""); setDoneCount(0); };
 
   // Add scenario
   if (mode === "addScen") {
@@ -354,19 +362,22 @@ function PraxisView({ cats, scenarios, setScenarios, userId, record, reload }) {
     return (
       <div style={{ padding: 16 }}>
         <button onClick={reset} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer", marginBottom: 14 }}>← Zurück</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}><span style={{ fontSize: 28 }}>{sit.icon}</span><div><h2 style={{ fontSize: 17, fontWeight: 700, color: C.white }}>{sit.name}</h2><p style={{ fontSize: 12, color: C.textSoft }}>{sit.description}</p></div></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <span style={{ fontSize: 28 }}>{sit.icon}</span>
+          <div><h2 style={{ fontSize: 17, fontWeight: 700, color: C.white }}>{sit.name}</h2>{sit.description && <p style={{ fontSize: 12, color: C.textSoft }}>{sit.description}</p>}</div>
+        </div>
         <Label>Sätze ({sitPhrases.length})</Label>
         {sitPhrases.map(p => (
           <Card key={p.id} style={{ padding: "10px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, flex: 1, color: C.text }}>{p.text}</span>
-            <button onClick={async () => { try { const t = await sb.from("iv_scenario_phrases"); await t.delete({ id: p.id }); reload(); } catch {} }} style={{ background: "none", border: "none", color: C.textSoft, cursor: "pointer", fontSize: 12 }}>✕</button>
+            <span style={{ fontSize: 14, flex: 1, color: C.text, lineHeight: 1.4 }}>{p.text}</span>
+            <button onClick={async () => { try { const t = await sb.from("iv_scenario_phrases"); await t.delete({ id: p.id }); reload(); } catch {} }} style={{ background: "none", border: "none", color: C.textSoft, cursor: "pointer", fontSize: 13 }}>✕</button>
           </Card>
         ))}
         <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-          <input value={newPhrase} onChange={e => setNewPhrase(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && newPhrase.trim()) { try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} } }} placeholder="Neuen Satz..." style={{ ...inputStyle, flex: 1, padding: "8px 10px", fontSize: 13 }} />
+          <input value={newPhrase} onChange={e => setNewPhrase(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && newPhrase.trim()) { try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} } }} placeholder="Neuen Satz hinzufügen..." style={{ ...inputStyle, flex: 1, padding: "8px 10px", fontSize: 13 }} />
           <button onClick={async () => { if (!newPhrase.trim()) return; try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} }} style={{ width: 34, height: 34, borderRadius: 6, border: "none", background: C.red, color: C.white, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
         </div>
-        <button onClick={async () => { try { const t = await sb.from("iv_scenarios"); await t.delete({ id: activeSit }); reload(); reset(); } catch {} }} style={{ display: "block", margin: "20px auto", background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Szenario löschen</button>
+        <button onClick={async () => { try { const t = await sb.from("iv_scenarios"); await t.delete({ id: activeSit }); reload(); reset(); } catch {} }} style={{ display: "block", margin: "24px auto 0", background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Szenario löschen</button>
       </div>
     );
   }
@@ -374,7 +385,7 @@ function PraxisView({ cats, scenarios, setScenarios, userId, record, reload }) {
   // Running session
   if (mode === "go") {
     const p = activePhrases[idx];
-    if (!p) return <div style={{ padding: 16, textAlign: "center" }}><p style={{ color: C.textMid }}>Keine Sätze.</p><Btn onClick={reset}>Zurück</Btn></div>;
+    if (!p) return <div style={{ padding: 16, textAlign: "center" }}><p style={{ color: C.textMid, marginBottom: 16 }}>Keine Sätze in diesem Szenario.</p><Btn onClick={reset}>Zurück</Btn></div>;
     const pct = ((idx + 1) / activePhrases.length) * 100;
     return (
       <div style={{ padding: 16 }}>
@@ -382,12 +393,12 @@ function PraxisView({ cats, scenarios, setScenarios, userId, record, reload }) {
           <div style={{ flex: 1, height: 3, background: C.border, borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", background: C.red, borderRadius: 2, width: `${pct}%`, transition: "width 0.3s" }} /></div>
           <span style={{ fontSize: 12, color: C.textSoft }}>{idx + 1}/{activePhrases.length}</span>
         </div>
-        {p.cat && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{p.cat}</div>}
+        {p.scenName && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>{p.scenName}</div>}
         <Card style={{ padding: "28px 18px", textAlign: "center", marginBottom: 16, borderTop: `2px solid ${C.red}` }}>
           <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.5, color: C.white }}>"{p.text}"</div>
         </Card>
         <p style={{ fontSize: 13, color: C.textSoft, textAlign: "center", marginBottom: 18 }}>Lies den Satz laut vor. Wiederhole 2–3 mal.</p>
-        <Btn onClick={() => { if (idx < activePhrases.length - 1) setIdx(idx + 1); else { setDoneCount(activePhrases.length); record(source === "categories" ? "practice" : "scenario", activePhrases.length); setMode("done"); } }}>
+        <Btn onClick={() => { if (idx < activePhrases.length - 1) setIdx(idx + 1); else { setDoneCount(activePhrases.length); record("practice", activePhrases.length); setMode("done"); } }}>
           {idx < activePhrases.length - 1 ? "Nächster Satz →" : "Session beenden ✓"}
         </Btn>
         <button onClick={reset} style={{ display: "block", margin: "12px auto", background: "none", border: "none", color: C.textSoft, fontSize: 13, cursor: "pointer" }}>Abbrechen</button>
@@ -407,56 +418,68 @@ function PraxisView({ cats, scenarios, setScenarios, userId, record, reload }) {
     );
   }
 
-  // Select mode
+  // Multi-select mode
+  if (mode === "multiSelect") {
+    return (
+      <div style={{ padding: 16 }}>
+        <button onClick={reset} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer", marginBottom: 14 }}>← Zurück</button>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>SZENARIEN WÄHLEN</h2>
+        <p style={{ fontSize: 14, color: C.textMid, marginBottom: 16 }}>Wähle mehrere Szenarien für eine kombinierte Session.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {scenarios.map(s => {
+            const sel = selScens.includes(s.id);
+            return (
+              <button key={s.id} onClick={() => setSelScens(p => sel ? p.filter(x => x !== s.id) : [...p, s.id])} style={{ background: sel ? C.redSoft : C.card, border: `1px solid ${sel ? C.red : C.border}`, borderRadius: 10, padding: 12, cursor: "pointer", textAlign: "center" }}>
+                <span style={{ fontSize: 22 }}>{s.icon}</span>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.white, marginTop: 4 }}>{s.name}</div>
+                <div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>{s.phrases.length} Sätze</div>
+              </button>
+            );
+          })}
+        </div>
+        <Btn onClick={() => { setIdx(0); setMode("go"); }} disabled={!multiPhrases.length} style={{ marginTop: 16 }}>
+          Session starten ({multiPhrases.length} Sätze)
+        </Btn>
+      </div>
+    );
+  }
+
+  // Select (default)
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>PRAXIS</h2>
-      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Wähle Kategorien oder ein Szenario zum Üben.</p>
+      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 16 }}>Wähle ein Szenario zum Üben, oder kombiniere mehrere.</p>
 
-      {/* Tab switch */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {[{ v: "categories", l: "Kategorien" }, { v: "scenarios", l: "Szenarien" }].map(t => (
-          <button key={t.v} onClick={() => { setSource(t.v); setSelCats([]); setActiveSit(null); }} style={{ flex: 1, padding: 10, borderRadius: 8, background: source === t.v ? C.redSoft : C.card, border: `1px solid ${source === t.v ? C.red : C.border}`, color: source === t.v ? C.red : C.textSoft, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{t.l}</button>
+      <Btn onClick={() => setMode("multiSelect")} style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text, marginBottom: 16 }}>
+        🎯 Mehrere Szenarien kombinieren
+      </Btn>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {scenarios.map(s => (
+          <div key={s.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
+            <span style={{ fontSize: 24 }}>{s.icon}</span>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.white, marginTop: 4 }}>{s.name}</div>
+            {s.description && <div style={{ fontSize: 11, color: C.textSoft, marginTop: 2, lineHeight: 1.3 }}>{s.description}</div>}
+            <div style={{ fontSize: 12, color: C.red, marginTop: 4 }}>{s.phrases.length} Sätze</div>
+            <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+              <button onClick={() => { setActiveSit(s.id); setSelScens([]); setIdx(0); setMode("go"); }}
+                style={{ flex: 1, padding: 7, background: C.red, border: "none", borderRadius: 5, color: C.white, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Üben</button>
+              <button onClick={() => { setActiveSit(s.id); setMode("editScen"); }}
+                style={{ flex: 1, padding: 7, background: "none", border: `1px solid ${C.border}`, borderRadius: 5, color: C.textMid, fontSize: 12, cursor: "pointer" }}>Edit</button>
+            </div>
+          </div>
         ))}
       </div>
-
-      {source === "categories" ? (
-        <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {cats.map(cat => { const sel = selCats.includes(cat.id); const n = cat.phrases.filter(p => p.is_active).length; return (
-              <button key={cat.id} onClick={() => setSelCats(p => sel ? p.filter(c => c !== cat.id) : [...p, cat.id])} style={{ background: sel ? C.redSoft : C.card, border: `1px solid ${sel ? C.red : C.border}`, borderRadius: 10, padding: 12, cursor: "pointer", textAlign: "center" }}>
-                <span style={{ fontSize: 22 }}>{cat.icon}</span><div style={{ fontSize: 13, fontWeight: 600, color: C.white, marginTop: 4 }}>{cat.name}</div><div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>{n} Sätze</div>
-              </button>
-            ); })}
-          </div>
-          <Btn onClick={() => { setIdx(0); setMode("go"); }} disabled={!catPhrases.length} style={{ marginTop: 16 }}>Session starten ({catPhrases.length} Sätze)</Btn>
-        </>
-      ) : (
-        <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {scenarios.map(s => (
-              <div key={s.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
-                <span style={{ fontSize: 24 }}>{s.icon}</span><div style={{ fontSize: 13, fontWeight: 600, color: C.white, marginTop: 4 }}>{s.name}</div><div style={{ fontSize: 12, color: C.red, marginTop: 4 }}>{s.phrases.length} Sätze</div>
-                <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                  <button onClick={() => { setActiveSit(s.id); setIdx(0); setSource("scenarios"); setMode("go"); }} style={{ flex: 1, padding: 7, background: C.red, border: "none", borderRadius: 5, color: C.white, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Üben</button>
-                  <button onClick={() => { setActiveSit(s.id); setMode("editScen"); }} style={{ flex: 1, padding: 7, background: "none", border: `1px solid ${C.border}`, borderRadius: 5, color: C.textMid, fontSize: 12, cursor: "pointer" }}>Edit</button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => setMode("addScen")} style={{ width: "100%", padding: 12, marginTop: 12, background: "none", border: `1px dashed ${C.borderLight}`, borderRadius: 8, color: C.textSoft, fontSize: 13, cursor: "pointer" }}>+ Neues Szenario</button>
-        </>
-      )}
+      <button onClick={() => setMode("addScen")} style={{ width: "100%", padding: 12, marginTop: 12, background: "none", border: `1px dashed ${C.borderLight}`, borderRadius: 8, color: C.textSoft, fontSize: 13, cursor: "pointer" }}>+ Neues Szenario erstellen</button>
     </div>
   );
 }
 
 /* ── REFRAMER (with flashcard practice) ── */
-function ReframerView({ reframes, setReframes, userId, record, reload }) {
-  const [tab, setTab] = useState("create"); // create, practice
+function ReframerView({ reframes, setReframes, userId, record }) {
+  const [tab, setTab] = useState("create");
   const [neg, setNeg] = useState(""); const [pos, setPos] = useState("");
   const [showEx, setShowEx] = useState(false); const [saved, setSaved] = useState(false);
-  // Practice state
   const [practiceIdx, setPracticeIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [practiceList, setPracticeList] = useState([]);
@@ -466,12 +489,15 @@ function ReframerView({ reframes, setReframes, userId, record, reload }) {
     try { const t = await sb.from("iv_reframes"); const [r] = await t.insert({ user_id: userId, negative_text: neg.trim(), positive_text: pos.trim() }); setReframes(p => [r, ...p]); record("reframe", 1); setSaved(true); setTimeout(() => { setNeg(""); setPos(""); setSaved(false); }, 1200); } catch {}
   };
 
+  const deleteReframe = async (id) => {
+    try { const t = await sb.from("iv_reframes"); await t.delete({ id }); setReframes(prev => prev.filter(x => x.id !== id)); } catch {}
+  };
+
   const startPractice = () => {
     const shuffled = [...reframes].sort(() => Math.random() - 0.5);
     setPracticeList(shuffled); setPracticeIdx(0); setRevealed(false); setTab("practice");
   };
 
-  // Practice mode
   if (tab === "practice") {
     if (!practiceList.length) return <div style={{ padding: 16, textAlign: "center" }}><p style={{ color: C.textMid, marginBottom: 16 }}>Keine Reframes vorhanden.</p><Btn onClick={() => setTab("create")}>Zurück</Btn></div>;
     const current = practiceList[practiceIdx];
@@ -512,15 +538,12 @@ function ReframerView({ reframes, setReframes, userId, record, reload }) {
     );
   }
 
-  // Create mode
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>GEDANKEN-REFRAMER</h2>
       <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Wandle destruktive Gedanken in konstruktive um.</p>
 
-      {reframes.length > 0 && (
-        <Btn onClick={startPractice} style={{ background: C.green, marginBottom: 16 }}>🧠 Reframes üben ({reframes.length} Karten)</Btn>
-      )}
+      {reframes.length > 0 && <Btn onClick={startPractice} style={{ background: C.green, marginBottom: 16 }}>🧠 Reframes üben ({reframes.length} Karten)</Btn>}
 
       <Card style={{ padding: 16, marginBottom: 12 }}>
         <label style={{ fontSize: 12, fontWeight: 600, color: "#F87171", display: "block", marginBottom: 6 }}>NEGATIVER GEDANKE</label>
@@ -542,11 +565,11 @@ function ReframerView({ reframes, setReframes, userId, record, reload }) {
       {reframes.length > 0 && (
         <div style={{ marginTop: 18 }}>
           <Label>Gespeichert ({reframes.length})</Label>
-          {reframes.slice(0, 12).map(r => (
+          {reframes.slice(0, 15).map(r => (
             <Card key={r.id} style={{ padding: 10, marginBottom: 6 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                 <span style={{ fontSize: 11, color: C.textSoft }}>{new Date(r.created_at).toLocaleDateString("de-DE")}</span>
-                <button onClick={async () => { try { const t = await sb.from("iv_reframes"); await t.delete({ id: r.id }); setReframes(prev => prev.filter(x => x.id !== r.id)); } catch {} }} style={{ background: "none", border: "none", color: C.textSoft, cursor: "pointer", fontSize: 12, padding: 0 }}>✕</button>
+                <button onClick={() => deleteReframe(r.id)} style={{ background: "none", border: "none", color: C.textSoft, cursor: "pointer", fontSize: 13, padding: 0 }}>✕</button>
               </div>
               <div style={{ fontSize: 13, color: "#F87171" }}>🔴 {r.negative_text}</div>
               <div style={{ fontSize: 13, color: "#6EE7B7" }}>🟢 {r.positive_text}</div>
@@ -558,7 +581,7 @@ function ReframerView({ reframes, setReframes, userId, record, reload }) {
   );
 }
 
-/* ── JOURNAL (with edit) ── */
+/* ── JOURNAL (with edit & delete) ── */
 function JournalView({ journal, setJournal, userId, record, reload }) {
   const [mood, setMood] = useState(3); const [text, setText] = useState(""); const [type, setType] = useState("neutral");
   const [saved, setSaved] = useState(false);
@@ -572,7 +595,6 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
 
   const startEdit = (entry) => {
     setEditId(entry.id); setEditMood(entry.mood); setEditText(entry.text); setEditType(entry.self_talk_type);
-    // UTC → lokale Zeit für datetime-local Input
     const d = new Date(entry.created_at);
     const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     setEditDate(local);
@@ -588,7 +610,7 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
   };
 
   const deleteEntry = async (id) => {
-    try { const t = await sb.from("iv_journal"); await t.delete({ id }); reload(); } catch {}
+    try { const t = await sb.from("iv_journal"); await t.delete({ id }); setJournal(prev => prev.filter(x => x.id !== id)); } catch {}
   };
 
   return (
@@ -621,7 +643,6 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
           <Label>Einträge ({journal.length})</Label>
           {journal.slice(0, 20).map(entry => (
             editId === entry.id ? (
-              // Edit mode
               <Card key={entry.id} style={{ padding: 14, marginBottom: 8, borderLeft: `3px solid ${C.red}` }}>
                 <Label>Datum & Uhrzeit</Label>
                 <input type="datetime-local" value={editDate} onChange={e => setEditDate(e.target.value)} style={{ ...inputStyle, marginBottom: 10, colorScheme: "dark" }} />
@@ -647,7 +668,6 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
                 </div>
               </Card>
             ) : (
-              // Display mode
               <Card key={entry.id} style={{ padding: 12, marginBottom: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                   <span style={{ fontSize: 16 }}>{MOODS.find(m => m.v === entry.mood)?.e}</span>
@@ -655,7 +675,7 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
                   <span style={{ fontSize: 11, color: C.textSoft, marginLeft: "auto" }}>{new Date(entry.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.5, marginBottom: 8 }}>{entry.text}</p>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 12 }}>
                   <button onClick={() => startEdit(entry)} style={{ background: "none", border: "none", color: C.red, fontSize: 12, cursor: "pointer", padding: 0 }}>Bearbeiten</button>
                   <button onClick={() => deleteEntry(entry.id)} style={{ background: "none", border: "none", color: C.textSoft, fontSize: 12, cursor: "pointer", padding: 0 }}>Löschen</button>
                 </div>
@@ -676,12 +696,12 @@ function CoachDashboard({ clients }) {
     setSelected(client); setLoading(true);
     try {
       const uid = `&user_id=eq.${client.id}`;
-      const [journalT, reframeT, sessionT, catT, phraseT] = await Promise.all(["iv_journal", "iv_reframes", "iv_practice_sessions", "iv_categories", "iv_phrases"].map(t => sb.from(t)));
-      const [journal, reframes, sessions, cats, phrases] = await Promise.all([
+      const [journalT, reframeT, sessionT, scenT, scenPT] = await Promise.all(["iv_journal", "iv_reframes", "iv_practice_sessions", "iv_scenarios", "iv_scenario_phrases"].map(t => sb.from(t)));
+      const [journal, reframes, sessions, scens, scenPhrases] = await Promise.all([
         journalT.select("*", uid + "&order=created_at.desc&limit=20"), reframeT.select("*", uid + "&order=created_at.desc&limit=20"),
-        sessionT.select("*", uid + "&order=created_at.desc&limit=30"), catT.select("*", uid), phraseT.select("*", uid)
+        sessionT.select("*", uid + "&order=created_at.desc&limit=30"), scenT.select("*", uid), scenPT.select("*", uid)
       ]);
-      setClientData({ journal, reframes, sessions, totalPhrases: phrases.length, totalCats: cats.length });
+      setClientData({ journal, reframes, sessions, scenarioCount: scens.length, totalPhrases: scenPhrases.length });
     } catch (err) { console.error(err); }
     setLoading(false);
   };
@@ -695,10 +715,11 @@ function CoachDashboard({ clients }) {
           <p style={{ fontSize: 12, color: C.textSoft }}>{selected.email}</p>
           <p style={{ fontSize: 12, color: C.textSoft }}>Dabei seit {new Date(selected.created_at).toLocaleDateString("de-DE")}</p>
         </Card>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
-          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.sessions.length}</div><div style={{ fontSize: 10, color: C.textSoft }}>SESSIONS</div></Card>
-          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.reframes.length}</div><div style={{ fontSize: 10, color: C.textSoft }}>REFRAMES</div></Card>
-          <Card style={{ padding: "10px 8px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.journal.length}</div><div style={{ fontSize: 10, color: C.textSoft }}>JOURNAL</div></Card>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
+          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.sessions.length}</div><div style={{ fontSize: 11, color: C.textSoft }}>SESSIONS</div></Card>
+          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.scenarioCount}</div><div style={{ fontSize: 11, color: C.textSoft }}>SZENARIEN</div></Card>
+          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.reframes.length}</div><div style={{ fontSize: 11, color: C.textSoft }}>REFRAMES</div></Card>
+          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.journal.length}</div><div style={{ fontSize: 11, color: C.textSoft }}>JOURNAL</div></Card>
         </div>
         {clientData.journal.length > 0 && (<><Label>Letzte Journal-Einträge</Label>{clientData.journal.slice(0, 8).map(e => (
           <Card key={e.id} style={{ padding: 10, marginBottom: 6 }}>
