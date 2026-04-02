@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.7.0";
+const APP_VERSION = "1.7.1";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -181,11 +181,36 @@ export default function App() {
       try {
         const s = JSON.parse(saved);
         sb.token = s.token;
-        // Verify token is still valid
+        // Verify token, if expired try refresh
         fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${s.token}` } })
-          .then(r => { if (r.ok) { setUser(s.user); } else { localStorage.removeItem("iv_session"); sb.token = null; } })
-          .catch(() => { localStorage.removeItem("iv_session"); sb.token = null; })
-          .finally(() => setLoading(false));
+          .then(async r => {
+            if (r.ok) {
+              setUser(s.user);
+              setLoading(false);
+            } else if (s.refreshToken) {
+              // Token expired → refresh
+              try {
+                const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+                  method: "POST", headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+                  body: JSON.stringify({ refresh_token: s.refreshToken })
+                });
+                const data = await res.json();
+                if (data.access_token) {
+                  sb.token = data.access_token;
+                  const newSession = { token: data.access_token, refreshToken: data.refresh_token || s.refreshToken, user: s.user };
+                  localStorage.setItem("iv_session", JSON.stringify(newSession));
+                  setUser(s.user);
+                } else {
+                  localStorage.removeItem("iv_session"); sb.token = null;
+                }
+              } catch { localStorage.removeItem("iv_session"); sb.token = null; }
+              setLoading(false);
+            } else {
+              localStorage.removeItem("iv_session"); sb.token = null;
+              setLoading(false);
+            }
+          })
+          .catch(() => { localStorage.removeItem("iv_session"); sb.token = null; setLoading(false); });
       } catch { setLoading(false); }
     } else { setLoading(false); }
   }, []);
@@ -201,7 +226,7 @@ export default function App() {
         try { const pt = await sb.from("iv_profiles"); await pt.insert({ id: loginData.user.id, email, display_name: name, role: "client" }); } catch {}
         const profile = { id: loginData.user.id, email, role: "client", display_name: name };
         setUser(profile);
-        localStorage.setItem("iv_session", JSON.stringify({ token: loginData.access_token, user: profile }));
+        localStorage.setItem("iv_session", JSON.stringify({ token: loginData.access_token, refreshToken: loginData.refresh_token, user: profile }));
       } else {
         const data = await sb.auth("login", { email, password });
         sb.token = data.access_token;
@@ -210,7 +235,7 @@ export default function App() {
         if (!profiles?.length) { try { await pt.insert({ id: data.user.id, email, display_name: email.split("@")[0], role: "client" }); profiles = await pt.select("*", `&id=eq.${data.user.id}`); } catch {} }
         const profile = profiles[0] || { id: data.user.id, email, role: "client", display_name: email.split("@")[0] };
         setUser(profile);
-        localStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, user: profile }));
+        localStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, refreshToken: data.refresh_token, user: profile }));
       }
     } catch (err) { setError(err.message); }
   };
@@ -285,6 +310,22 @@ function MainApp({ user, onLogout }) {
     } catch (err) {
       console.error(err);
       if (err.message?.includes("JWT") || err.message?.includes("token")) {
+        // Try refresh before logging out
+        try {
+          const saved = JSON.parse(localStorage.getItem("iv_session") || "{}");
+          if (saved.refreshToken) {
+            const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+              method: "POST", headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+              body: JSON.stringify({ refresh_token: saved.refreshToken })
+            });
+            const data = await res.json();
+            if (data.access_token) {
+              sb.token = data.access_token;
+              localStorage.setItem("iv_session", JSON.stringify({ ...saved, token: data.access_token, refreshToken: data.refresh_token || saved.refreshToken }));
+              loadData(); return; // Retry
+            }
+          }
+        } catch {}
         localStorage.removeItem("iv_session"); sb.token = null; window.location.reload(); return;
       }
     }
