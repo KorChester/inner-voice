@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
+const APP_VERSION = "1.1.0";
+
 /* ─────────────────────────────────────────────
    SUPABASE CONFIG
    ───────────────────────────────────────────── */
@@ -529,6 +531,8 @@ function HomeView({ streak, doneToday, total, reframeCount, journalCount, go, is
         <p style={{ fontSize: 13, fontStyle: "italic", color: C.textMid, lineHeight: 1.6 }}>"Der wichtigste Mensch, mit dem du je reden wirst, bist du selbst."</p>
         <div style={{ fontSize: 9, color: C.textSoft, marginTop: 6, letterSpacing: 1.5, textTransform: "uppercase" }}>— Coach Chang</div>
       </Card>
+
+      <div style={{ textAlign: "center", marginTop: 16, fontSize: 10, color: C.textSoft, opacity: 0.4 }}>v{APP_VERSION}</div>
     </div>
   );
 }
