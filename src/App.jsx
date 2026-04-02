@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.5.2";
+const APP_VERSION = "1.6.1";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -688,63 +688,282 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
   );
 }
 
-/* ── COACH DASHBOARD ── */
+/* ── COACH DASHBOARD (Enhanced) ── */
 function CoachDashboard({ clients }) {
-  const [selected, setSelected] = useState(null); const [clientData, setClientData] = useState(null); const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [clientData, setClientData] = useState(null);
+  const [clientOverviews, setClientOverviews] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const loadClient = async (client) => {
-    setSelected(client); setLoading(true);
+  // Load overview data for ALL clients (for traffic light list)
+  useEffect(() => {
+    loadOverviews();
+  }, [clients]);
+
+  const loadOverviews = async () => {
+    if (!clients.length) { setLoading(false); return; }
     try {
-      const uid = `&user_id=eq.${client.id}`;
-      const [journalT, reframeT, sessionT, scenT, scenPT] = await Promise.all(["iv_journal", "iv_reframes", "iv_practice_sessions", "iv_scenarios", "iv_scenario_phrases"].map(t => sb.from(t)));
-      const [journal, reframes, sessions, scens, scenPhrases] = await Promise.all([
-        journalT.select("*", uid + "&order=created_at.desc&limit=20"), reframeT.select("*", uid + "&order=created_at.desc&limit=20"),
-        sessionT.select("*", uid + "&order=created_at.desc&limit=30"), scenT.select("*", uid), scenPT.select("*", uid)
+      const [sessionT, journalT] = await Promise.all(["iv_practice_sessions", "iv_journal"].map(t => sb.from(t)));
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+      const [allSessions, allJournal] = await Promise.all([
+        sessionT.select("*", `&created_at=gte.${thirtyDaysAgo}&order=created_at.desc`),
+        journalT.select("*", `&created_at=gte.${thirtyDaysAgo}&order=created_at.desc`)
       ]);
-      setClientData({ journal, reframes, sessions, scenarioCount: scens.length, totalPhrases: scenPhrases.length });
+
+      const overviews = {};
+      for (const client of clients) {
+        const cSessions = allSessions.filter(s => s.user_id === client.id);
+        const cJournal = allJournal.filter(j => j.user_id === client.id);
+
+        // Last active
+        const allDates = [...cSessions.map(s => s.created_at), ...cJournal.map(j => j.created_at)].sort().reverse();
+        const lastActive = allDates[0] ? new Date(allDates[0]) : null;
+        const daysSince = lastActive ? Math.floor((Date.now() - lastActive.getTime()) / 86400000) : 999;
+
+        // Mood trend (last 5 vs previous 5)
+        const moods = cJournal.map(j => j.mood);
+        const recent5 = moods.slice(0, 5);
+        const prev5 = moods.slice(5, 10);
+        const avgRecent = recent5.length ? recent5.reduce((a, b) => a + b, 0) / recent5.length : 0;
+        const avgPrev = prev5.length ? prev5.reduce((a, b) => a + b, 0) / prev5.length : 0;
+        const moodTrend = !prev5.length ? "stable" : avgRecent > avgPrev + 0.3 ? "rising" : avgRecent < avgPrev - 0.3 ? "falling" : "stable";
+
+        // Self-talk distribution
+        const neg = cJournal.filter(j => j.self_talk_type === "negative").length;
+        const neu = cJournal.filter(j => j.self_talk_type === "neutral").length;
+        const pos = cJournal.filter(j => j.self_talk_type === "positive").length;
+        const total = neg + neu + pos;
+        const negPct = total ? Math.round(neg / total * 100) : 0;
+        const posPct = total ? Math.round(pos / total * 100) : 0;
+
+        // Sessions this week vs last week
+        const now = new Date();
+        const startThisWeek = new Date(now); startThisWeek.setDate(now.getDate() - now.getDay());
+        const startLastWeek = new Date(startThisWeek); startLastWeek.setDate(startThisWeek.getDate() - 7);
+        const sessionsThisWeek = cSessions.filter(s => new Date(s.created_at) >= startThisWeek).length;
+        const sessionsLastWeek = cSessions.filter(s => { const d = new Date(s.created_at); return d >= startLastWeek && d < startThisWeek; }).length;
+
+        // Traffic light
+        let status = "green";
+        const hasData = cSessions.length > 0 || cJournal.length > 0;
+        if (!hasData) { status = "new"; }
+        else if (daysSince > 7 || moodTrend === "falling" || negPct > 60) status = "red";
+        else if (daysSince > 3 || (moodTrend === "stable" && negPct > 40)) status = "yellow";
+
+        overviews[client.id] = { lastActive, daysSince, moodTrend, avgRecent, moods: moods.slice(0, 14).reverse(), negPct, posPct, neuPct: total ? 100 - negPct - posPct : 0, sessionsThisWeek, sessionsLastWeek, totalJournal: cJournal.length, totalSessions: cSessions.length, status };
+      }
+      setClientOverviews(overviews);
     } catch (err) { console.error(err); }
     setLoading(false);
   };
 
-  if (selected && clientData) {
+  // Load detailed data for one client
+  const loadClient = async (client) => {
+    setSelected(client);
+    try {
+      const uid = `&user_id=eq.${client.id}`;
+      const [journalT, reframeT, scenT, scenPT] = await Promise.all(["iv_journal", "iv_reframes", "iv_scenarios", "iv_scenario_phrases"].map(t => sb.from(t)));
+      const [journal, reframes, scens, scenPhrases] = await Promise.all([
+        journalT.select("*", uid + "&order=created_at.desc&limit=30"),
+        reframeT.select("*", uid + "&order=created_at.desc&limit=20"),
+        scenT.select("*", uid), scenPT.select("*", uid)
+      ]);
+      setClientData({ journal, reframes, scenarioCount: scens.length, scenarios: scens.map(s => ({ ...s, phrases: scenPhrases.filter(p => p.scenario_id === s.id) })) });
+    } catch (err) { console.error(err); }
+  };
+
+  const statusColors = { green: "#22C55E", yellow: "#EAB308", red: "#EF4444", new: "#06B6D4" };
+  const statusLabels = { green: "Gut dabei", yellow: "Aufmerksamkeit", red: "Eingreifen", new: "Neu" };
+  const trendLabels = { rising: "↗ steigend", stable: "→ stabil", falling: "↘ sinkend" };
+  const trendColors = { rising: C.green, stable: C.textSoft, falling: "#EF4444" };
+
+  const daysAgoText = (days) => {
+    if (days === 0) return "Heute aktiv";
+    if (days === 1) return "Gestern aktiv";
+    if (days === 999) return "Noch nie aktiv";
+    return `Vor ${days} Tagen aktiv`;
+  };
+
+  // ── Client Detail View ──
+  if (selected) {
+    const ov = clientOverviews[selected.id] || {};
     return (
       <div style={{ padding: 16 }}>
         <button onClick={() => { setSelected(null); setClientData(null); }} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer", marginBottom: 14 }}>← Alle Klienten</button>
-        <Card style={{ padding: 16, marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: C.white, marginBottom: 4 }}>{selected.display_name || selected.email}</h2>
-          <p style={{ fontSize: 12, color: C.textSoft }}>{selected.email}</p>
-          <p style={{ fontSize: 12, color: C.textSoft }}>Dabei seit {new Date(selected.created_at).toLocaleDateString("de-DE")}</p>
+
+        {/* Header with status */}
+        <Card style={{ padding: 16, marginBottom: 12, borderLeft: `3px solid ${statusColors[ov.status] || C.textSoft}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: C.white, marginBottom: 4 }}>{selected.display_name || selected.email}</h2>
+              <p style={{ fontSize: 12, color: C.textSoft }}>{selected.email}</p>
+              <p style={{ fontSize: 12, color: C.textSoft }}>Seit {new Date(selected.created_at).toLocaleDateString("de-DE")}</p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: statusColors[ov.status], padding: "3px 10px", background: `${statusColors[ov.status]}20`, borderRadius: 12 }}>{statusLabels[ov.status]}</div>
+              <div style={{ fontSize: 11, color: C.textSoft, marginTop: 6 }}>{daysAgoText(ov.daysSince)}</div>
+            </div>
+          </div>
         </Card>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
-          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.sessions.length}</div><div style={{ fontSize: 11, color: C.textSoft }}>SESSIONS</div></Card>
-          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.scenarioCount}</div><div style={{ fontSize: 11, color: C.textSoft }}>SZENARIEN</div></Card>
-          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.reframes.length}</div><div style={{ fontSize: 11, color: C.textSoft }}>REFRAMES</div></Card>
-          <Card style={{ padding: "10px 6px", textAlign: "center" }}><div style={{ fontSize: 18, fontWeight: 700, color: C.white }}>{clientData.journal.length}</div><div style={{ fontSize: 11, color: C.textSoft }}>JOURNAL</div></Card>
-        </div>
-        {clientData.journal.length > 0 && (<><Label>Letzte Journal-Einträge</Label>{clientData.journal.slice(0, 8).map(e => (
-          <Card key={e.id} style={{ padding: 10, marginBottom: 6 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><span>{MOODS.find(m => m.v === e.mood)?.e}</span><span style={{ fontSize: 12, fontWeight: 600, color: e.self_talk_type === "positive" ? C.green : e.self_talk_type === "negative" ? "#F87171" : C.textSoft }}>{e.self_talk_type}</span><span style={{ fontSize: 11, color: C.textSoft, marginLeft: "auto" }}>{new Date(e.created_at).toLocaleDateString("de-DE")}</span></div>
-            <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.4 }}>{e.text}</p>
+
+        {/* Quick stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+          <Card style={{ padding: 12 }}>
+            <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4 }}>SESSIONS/WOCHE</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{ov.sessionsThisWeek || 0}</div>
+            <div style={{ fontSize: 11, color: C.textSoft }}>Letzte Woche: {ov.sessionsLastWeek || 0}</div>
           </Card>
-        ))}</>)}
-        {clientData.reframes.length > 0 && (<><Label>Letzte Reframes</Label>{clientData.reframes.slice(0, 5).map(r => (
-          <Card key={r.id} style={{ padding: 10, marginBottom: 6 }}><div style={{ fontSize: 13, color: "#F87171" }}>🔴 {r.negative_text}</div><div style={{ fontSize: 13, color: "#6EE7B7" }}>🟢 {r.positive_text}</div></Card>
-        ))}</>)}
+          <Card style={{ padding: 12 }}>
+            <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4 }}>STIMMUNGS-TREND</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: trendColors[ov.moodTrend] || C.textSoft }}>{trendLabels[ov.moodTrend] || "— keine Daten"}</div>
+            <div style={{ fontSize: 11, color: C.textSoft }}>Ø {(ov.avgRecent || 0).toFixed(1)} / 5</div>
+          </Card>
+        </div>
+
+        {/* Mood chart (last 14 entries) */}
+        {ov.moods?.length > 0 && (
+          <Card style={{ padding: 14, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Stimmungsverlauf (letzte {ov.moods.length} Einträge)</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 60 }}>
+              {ov.moods.map((m, i) => {
+                const h = (m / 5) * 50 + 10;
+                const color = m >= 4 ? C.green : m >= 3 ? "#EAB308" : "#EF4444";
+                return <div key={i} style={{ flex: 1, height: h, background: color, borderRadius: 3, opacity: 0.8, transition: "height 0.3s" }} title={`Stimmung: ${m}`} />;
+              })}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontSize: 9, color: C.textSoft }}>Ältester</span>
+              <span style={{ fontSize: 9, color: C.textSoft }}>Neuester</span>
+            </div>
+          </Card>
+        )}
+
+        {/* Self-talk distribution */}
+        {(ov.negPct > 0 || ov.posPct > 0 || ov.neuPct > 0) && (
+          <Card style={{ padding: 14, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Self-Talk Verteilung</div>
+            <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", marginBottom: 8 }}>
+              {ov.posPct > 0 && <div style={{ width: `${ov.posPct}%`, background: C.green }} />}
+              {ov.neuPct > 0 && <div style={{ width: `${ov.neuPct}%`, background: "#EAB308" }} />}
+              {ov.negPct > 0 && <div style={{ width: `${ov.negPct}%`, background: "#EF4444" }} />}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+              <span style={{ color: C.green }}>Positiv {ov.posPct}%</span>
+              <span style={{ color: "#EAB308" }}>Neutral {ov.neuPct}%</span>
+              <span style={{ color: "#EF4444" }}>Negativ {ov.negPct}%</span>
+            </div>
+          </Card>
+        )}
+
+        {/* Scenarios overview */}
+        {clientData?.scenarios?.length > 0 && (
+          <>
+            <Label>Szenarien des Klienten ({clientData.scenarioCount})</Label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+              {clientData.scenarios.map(s => (
+                <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontSize: 12, color: C.textMid }}>
+                  {s.icon} {s.name} ({s.phrases.length})
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Recent journal entries */}
+        {clientData?.journal?.length > 0 && (
+          <>
+            <Label>Letzte Journal-Einträge</Label>
+            {clientData.journal.slice(0, 8).map(e => (
+              <Card key={e.id} style={{ padding: 10, marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontSize: 14 }}>{MOODS.find(m => m.v === e.mood)?.e}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: e.self_talk_type === "positive" ? C.green : e.self_talk_type === "negative" ? "#F87171" : C.textSoft }}>{TYPES.find(t => t.v === e.self_talk_type)?.l}</span>
+                  <span style={{ fontSize: 11, color: C.textSoft, marginLeft: "auto" }}>{new Date(e.created_at).toLocaleDateString("de-DE")}</span>
+                </div>
+                <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.4 }}>{e.text}</p>
+              </Card>
+            ))}
+          </>
+        )}
+
+        {/* Recent reframes */}
+        {clientData?.reframes?.length > 0 && (
+          <>
+            <Label>Letzte Reframes</Label>
+            {clientData.reframes.slice(0, 5).map(r => (
+              <Card key={r.id} style={{ padding: 10, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: "#F87171" }}>🔴 {r.negative_text}</div>
+                <div style={{ fontSize: 13, color: "#6EE7B7" }}>🟢 {r.positive_text}</div>
+              </Card>
+            ))}
+          </>
+        )}
+
+        {!clientData && <p style={{ color: C.textSoft, textAlign: "center", marginTop: 20 }}>Daten werden geladen...</p>}
       </div>
     );
   }
 
+  // ── Client List View (with traffic lights) ──
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>COACH DASHBOARD</h2>
-      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Deine Klienten und deren Fortschritt.</p>
-      {loading && <p style={{ color: C.textSoft }}>Laden...</p>}
-      {clients.length === 0 ? <Card style={{ padding: 20, textAlign: "center" }}><p style={{ color: C.textSoft }}>Noch keine Klienten registriert.</p></Card> : clients.map(c => (
-        <button key={c.id} onClick={() => loadClient(c)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: 14, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, marginBottom: 8, cursor: "pointer", textAlign: "left" }}>
-          <div style={{ width: 38, height: 38, borderRadius: 19, background: C.redSoft, display: "flex", alignItems: "center", justifyContent: "center", color: C.red, fontWeight: 700, fontSize: 15 }}>{(c.display_name || c.email)[0].toUpperCase()}</div>
-          <div><div style={{ fontSize: 15, fontWeight: 600, color: C.white }}>{c.display_name || c.email}</div><div style={{ fontSize: 12, color: C.textSoft }}>Seit {new Date(c.created_at).toLocaleDateString("de-DE")}</div></div>
-        </button>
-      ))}
+      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Deine Klienten auf einen Blick.</p>
+
+      {loading && <p style={{ color: C.textSoft }}>Klientendaten werden geladen...</p>}
+
+      {!loading && clients.length === 0 && (
+        <Card style={{ padding: 20, textAlign: "center" }}><p style={{ color: C.textSoft }}>Noch keine Klienten registriert.</p></Card>
+      )}
+
+      {!loading && clients.length > 0 && (
+        <>
+          {/* Status summary */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {["green", "yellow", "red", "new"].map(s => {
+              const count = clients.filter(c => clientOverviews[c.id]?.status === s).length;
+              if (!count && s === "new") return null;
+              return (
+                <Card key={s} style={{ flex: 1, padding: "10px 8px", textAlign: "center", borderTop: `2px solid ${statusColors[s]}` }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{count}</div>
+                  <div style={{ fontSize: 10, color: statusColors[s] }}>{statusLabels[s]}</div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Client list sorted by status (red first, new last) */}
+          {["red", "yellow", "green", "new"].map(status => {
+            const filtered = clients.filter(c => clientOverviews[c.id]?.status === status);
+            if (!filtered.length) return null;
+            return (
+              <div key={status}>
+                {filtered.map(c => {
+                  const ov = clientOverviews[c.id] || {};
+                  return (
+                    <button key={c.id} onClick={() => loadClient(c)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: 14, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, marginBottom: 8, cursor: "pointer", textAlign: "left" }}>
+                      <div style={{ position: "relative" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 20, background: C.redSoft, display: "flex", alignItems: "center", justifyContent: "center", color: C.red, fontWeight: 700, fontSize: 16 }}>
+                          {(c.display_name || c.email)[0].toUpperCase()}
+                        </div>
+                        <div style={{ position: "absolute", top: -2, right: -2, width: 12, height: 12, borderRadius: 6, background: statusColors[ov.status] || C.textSoft, border: `2px solid ${C.card}` }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: C.white }}>{c.display_name || c.email}</div>
+                        <div style={{ fontSize: 12, color: C.textSoft }}>{ov.status === "new" ? "Gerade registriert" : daysAgoText(ov.daysSince)}</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 12, color: trendColors[ov.moodTrend] || C.textSoft }}>{trendLabels[ov.moodTrend] || "—"}</div>
+                        <div style={{ fontSize: 11, color: C.textSoft }}>{ov.totalSessions || 0} Sessions</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
