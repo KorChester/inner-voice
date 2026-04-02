@@ -168,6 +168,13 @@ export default function App() {
         });
         if (data.access_token) {
           sb.token = data.access_token;
+          // Profil automatisch in iv_profiles erstellen
+          try {
+            const profileTable = await sb.from("iv_profiles");
+            await profileTable.insert({ id: data.user.id, email, display_name: name, role: "client" });
+          } catch (profileErr) {
+            console.log("Profil existiert evtl. schon:", profileErr);
+          }
           const profile = { id: data.user.id, email, role: "client", display_name: name };
           setUser(profile);
           sessionStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, user: profile }));
@@ -177,8 +184,23 @@ export default function App() {
       } else {
         const data = await sb.auth("login", { email, password });
         sb.token = data.access_token;
-        // Load profile
-        const profiles = await (await sb.from("iv_profiles")).select("*", `&id=eq.${data.user.id}`);
+        // Profil laden
+        const profileTable = await sb.from("iv_profiles");
+        let profiles = await profileTable.select("*", `&id=eq.${data.user.id}`);
+        // Falls kein Profil existiert, automatisch erstellen
+        if (!profiles || profiles.length === 0) {
+          try {
+            await profileTable.insert({
+              id: data.user.id,
+              email,
+              display_name: email.split("@")[0],
+              role: "client"
+            });
+            profiles = await profileTable.select("*", `&id=eq.${data.user.id}`);
+          } catch (profileErr) {
+            console.log("Profil-Erstellung bei Login:", profileErr);
+          }
+        }
         const profile = profiles[0] || { id: data.user.id, email, role: "client", display_name: email.split("@")[0] };
         setUser(profile);
         sessionStorage.setItem("iv_session", JSON.stringify({ token: data.access_token, user: profile }));
