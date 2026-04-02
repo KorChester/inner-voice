@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.7.2";
+const APP_VERSION = "1.7.3";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -552,7 +552,7 @@ function ReframerView({ reframes, setReframes, userId, record }) {
 
   const save = async () => {
     if (!neg.trim() || !pos.trim()) return;
-    try { const t = await sb.from("iv_reframes"); const [r] = await t.insert({ user_id: userId, negative_text: neg.trim(), positive_text: pos.trim() }); setReframes(p => [r, ...p]); record("reframe", 1); setSaved(true); setTimeout(() => { setNeg(""); setPos(""); setSaved(false); }, 1200); } catch {}
+    try { const t = await sb.from("iv_reframes"); const [r] = await t.insert({ user_id: userId, negative_text: neg.trim(), positive_text: pos.trim() }); setReframes(p => [r, ...p]); setSaved(true); setTimeout(() => { setNeg(""); setPos(""); setSaved(false); }, 1200); } catch {}
   };
 
   const deleteReframe = async (id) => {
@@ -596,7 +596,7 @@ function ReframerView({ reframes, setReframes, userId, record }) {
           <Btn onClick={() => setRevealed(true)} style={{ background: C.green, marginBottom: 20 }}>Reframe aufdecken</Btn>
         )}
         {revealed && (
-          <Btn onClick={() => { setPracticeIdx(practiceIdx + 1); setRevealed(false); }}>
+          <Btn onClick={() => { if (practiceIdx >= practiceList.length - 1) record("reframe_practice", practiceList.length); setPracticeIdx(practiceIdx + 1); setRevealed(false); }}>
             {practiceIdx < practiceList.length - 1 ? "Nächster Reframe →" : "Abschließen ✓"}
           </Btn>
         )}
@@ -656,7 +656,7 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
 
   const save = async () => {
     if (!text.trim()) return;
-    try { const t = await sb.from("iv_journal"); const [entry] = await t.insert({ user_id: userId, mood, self_talk_type: type, text: text.trim() }); setJournal(p => [entry, ...p]); record("journal", 1); setSaved(true); setTimeout(() => { setText(""); setMood(3); setType("neutral"); setSaved(false); }, 1200); } catch {}
+    try { const t = await sb.from("iv_journal"); const [entry] = await t.insert({ user_id: userId, mood, self_talk_type: type, text: text.trim() }); setJournal(p => [entry, ...p]); setSaved(true); setTimeout(() => { setText(""); setMood(3); setType("neutral"); setSaved(false); }, 1200); } catch {}
   };
 
   const startEdit = (entry) => {
@@ -875,14 +875,14 @@ function CoachDashboard({ clients }) {
         {/* Quick stats */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
           <Card style={{ padding: 12 }}>
-            <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4 }}>SESSIONS/WOCHE</div>
+            <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4 }}>ÜBUNGEN DIESE WOCHE</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{ov.sessionsThisWeek || 0}</div>
             <div style={{ fontSize: 11, color: C.textSoft }}>Letzte Woche: {ov.sessionsLastWeek || 0}</div>
           </Card>
           <Card style={{ padding: 12 }}>
             <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4 }}>STIMMUNGS-TREND</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: trendColors[ov.moodTrend] || C.textSoft }}>{trendLabels[ov.moodTrend] || "— keine Daten"}</div>
-            <div style={{ fontSize: 11, color: C.textSoft }}>Ø {(ov.avgRecent || 0).toFixed(1)} / 5</div>
+            <div style={{ fontSize: 11, color: C.textSoft }}>{ov.moods?.length ? `Ø ${(ov.avgRecent || 0).toFixed(1)} / 5` : "Keine Journal-Einträge"}</div>
           </Card>
         </div>
 
@@ -1020,7 +1020,7 @@ function CoachDashboard({ clients }) {
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontSize: 12, color: trendColors[ov.moodTrend] || C.textSoft }}>{trendLabels[ov.moodTrend] || "—"}</div>
-                        <div style={{ fontSize: 11, color: C.textSoft }}>{ov.totalSessions || 0} Sessions</div>
+                        <div style={{ fontSize: 11, color: C.textSoft }}>{ov.totalSessions || 0} Übungen</div>
                       </div>
                     </button>
                   );
