@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.2.1";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -250,12 +250,12 @@ function MainApp({ user, onLogout }) {
         ["iv_scenarios", "iv_scenario_phrases", "iv_reframes", "iv_journal", "iv_practice_sessions"].map(t => sb.from(t))
       );
       let [rawScens, rawScenP, rawRef, rawJ, rawS] = await Promise.all([
-        scenT.select("*", uid + "&order=created_at.asc"), scenPT.select("*", uid),
+        scenT.select("*", uid + "&order=sort_order.asc"), scenPT.select("*", uid),
         refT.select("*", uid + "&order=created_at.desc"), journalT.select("*", uid + "&order=created_at.desc"), sessionT.select("*", uid + "&order=created_at.desc")
       ]);
       if (!rawScens.length) {
         await seedDefaults(user.id);
-        rawScens = await scenT.select("*", uid + "&order=created_at.asc");
+        rawScens = await scenT.select("*", uid + "&order=sort_order.asc");
         rawScenP = await scenPT.select("*", uid);
       }
       setScenarios(rawScens.map(s => ({ ...s, phrases: rawScenP.filter(p => p.scenario_id === s.id) })));
@@ -289,8 +289,9 @@ function MainApp({ user, onLogout }) {
   const seedDefaults = async (uid) => {
     const scenT = await sb.from("iv_scenarios");
     const scenPT = await sb.from("iv_scenario_phrases");
-    for (const s of SEED_SCENARIOS) {
-      const [sc] = await scenT.insert({ user_id: uid, name: s.name, icon: s.icon, description: s.description });
+    for (let i = 0; i < SEED_SCENARIOS.length; i++) {
+      const s = SEED_SCENARIOS[i];
+      const [sc] = await scenT.insert({ user_id: uid, name: s.name, icon: s.icon, description: s.description, sort_order: i });
       for (const t of s.phrases) await scenPT.insert({ user_id: uid, scenario_id: sc.id, text: t });
     }
   };
@@ -331,7 +332,7 @@ function MainApp({ user, onLogout }) {
       </header>
 
       <main>
-        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} exercisedToday={exercisedToday} go={setView} isCoach={isCoach} userName={user.display_name} journal={journal} sessions={sessions} />}
+        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} exercisedToday={exercisedToday} go={setView} isCoach={isCoach} userName={user.display_name} journal={journal} />}
         {view === "practice" && <PraxisView scenarios={scenarios} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
@@ -352,7 +353,7 @@ function MainApp({ user, onLogout }) {
 }
 
 /* ── HOME ── */
-function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName, journal, sessions }) {
+function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName, journal }) {
   const [showInfo, setShowInfo] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const h = new Date().getHours();
@@ -383,14 +384,6 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
   const negPct = total ? Math.round(neg / total * 100) : 0;
   const posPct = total ? Math.round(pos / total * 100) : 0;
   const neuPct = total ? 100 - negPct - posPct : 0;
-
-  // Session log (last 5)
-  const timeAgo = (d) => {
-    const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-    if (days === 0) return "Heute";
-    if (days === 1) return "Gestern";
-    return `Vor ${days} Tagen`;
-  };
 
   const confettiColors = ["#DC2626", "#22C55E", "#EAB308", "#3B82F6", "#A855F7"];
 
@@ -480,25 +473,6 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
         </Card>
       )}
 
-      {/* Letzte Aktivitäten */}
-      {sessions.length > 0 && (
-        <Card style={{ padding: 16, marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Letzte Aktivitäten</div>
-          {sessions.slice(0, 5).map((s, i) => (
-            <div key={s.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < Math.min(sessions.length, 5) - 1 ? `1px solid ${C.border}` : "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14 }}>{s.session_type === "practice" ? "▶" : "⟲"}</span>
-                <div>
-                  <div style={{ fontSize: 13, color: C.white }}>{s.session_type === "practice" ? "Praxis-Session" : "Reframe-Übung"}</div>
-                  <div style={{ fontSize: 11, color: C.textSoft }}>{s.phrases_count} {s.session_type === "practice" ? "Sätze" : "Karten"}</div>
-                </div>
-              </div>
-              <span style={{ fontSize: 11, color: C.textSoft }}>{timeAgo(s.created_at)}</span>
-            </div>
-          ))}
-        </Card>
-      )}
-
       <button onClick={() => go("science")} style={{ width: "100%", padding: "12px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <span style={{ fontSize: 20 }}>📚</span>
         <div><div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>Die Wissenschaft dahinter</div><div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>Evidenzbasierte Grundlagen zum Self-Talk Training</div></div>
@@ -530,8 +504,10 @@ function PraxisView({ scenarios, userId, record, reload }) {
     const b = scenarios[swapIdx];
     try {
       const t = await sb.from("iv_scenarios");
-      await t.update({ created_at: b.created_at }, { id: a.id });
-      await t.update({ created_at: a.created_at }, { id: b.id });
+      const aOrder = a.sort_order ?? index;
+      const bOrder = b.sort_order ?? swapIdx;
+      await t.update({ sort_order: bOrder }, { id: a.id });
+      await t.update({ sort_order: aOrder }, { id: b.id });
       reload();
     } catch {}
   };
@@ -559,7 +535,7 @@ function PraxisView({ scenarios, userId, record, reload }) {
           <Label>Name</Label><input value={newScen.name} onChange={e => setNewScen({ ...newScen, name: e.target.value })} placeholder="z.B. Prüfungsangst" style={{ ...inputStyle, marginBottom: 12 }} />
           <Label>Emoji</Label><input value={newScen.icon} onChange={e => setNewScen({ ...newScen, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 12, width: 60 }} />
           <Label>Beschreibung</Label><input value={newScen.description} onChange={e => setNewScen({ ...newScen, description: e.target.value })} placeholder="Kurze Beschreibung" style={{ ...inputStyle, marginBottom: 14 }} />
-          <Btn onClick={async () => { if (!newScen.name.trim()) return; try { const t = await sb.from("iv_scenarios"); await t.insert({ user_id: userId, name: newScen.name.trim(), icon: newScen.icon || "📌", description: newScen.description.trim() }); setNewScen({ name: "", icon: "📌", description: "" }); reload(); reset(); } catch {} }} disabled={!newScen.name.trim()}>Erstellen</Btn>
+          <Btn onClick={async () => { if (!newScen.name.trim()) return; try { const t = await sb.from("iv_scenarios"); await t.insert({ user_id: userId, name: newScen.name.trim(), icon: newScen.icon || "📌", description: newScen.description.trim(), sort_order: scenarios.length }); setNewScen({ name: "", icon: "📌", description: "" }); reload(); reset(); } catch {} }} disabled={!newScen.name.trim()}>Erstellen</Btn>
         </Card>
       </div>
     );
