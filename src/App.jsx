@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -201,7 +201,7 @@ export default function App() {
   return (
     <div style={{ fontFamily: "'Outfit', sans-serif", background: C.bg, minHeight: "100vh", color: C.text, maxWidth: 480, margin: "0 auto" }}>
       <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet" />
-      <style>{`* { box-sizing: border-box; margin: 0; } input:focus, textarea:focus { outline: none; border-color: ${C.red} !important; } button, textarea, input { font-family: 'Outfit', sans-serif; }`}</style>
+      <style>{`* { box-sizing: border-box; margin: 0; } input:focus, textarea:focus { outline: none; border-color: ${C.red} !important; } button, textarea, input { font-family: 'Outfit', sans-serif; } @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } @keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(400px) rotate(720deg); opacity: 0; } } main > div { animation: fadeIn 0.3s ease; }`}</style>
       {!user ? <AuthScreen onAuth={handleAuth} error={error} view={authView} setView={setAuthView} /> : <MainApp user={user} onLogout={handleLogout} />}
     </div>
   );
@@ -250,12 +250,12 @@ function MainApp({ user, onLogout }) {
         ["iv_scenarios", "iv_scenario_phrases", "iv_reframes", "iv_journal", "iv_practice_sessions"].map(t => sb.from(t))
       );
       let [rawScens, rawScenP, rawRef, rawJ, rawS] = await Promise.all([
-        scenT.select("*", uid), scenPT.select("*", uid),
+        scenT.select("*", uid + "&order=created_at.asc"), scenPT.select("*", uid),
         refT.select("*", uid + "&order=created_at.desc"), journalT.select("*", uid + "&order=created_at.desc"), sessionT.select("*", uid + "&order=created_at.desc")
       ]);
       if (!rawScens.length) {
         await seedDefaults(user.id);
-        rawScens = await scenT.select("*", uid);
+        rawScens = await scenT.select("*", uid + "&order=created_at.asc");
         rawScenP = await scenPT.select("*", uid);
       }
       setScenarios(rawScens.map(s => ({ ...s, phrases: rawScenP.filter(p => p.scenario_id === s.id) })));
@@ -331,7 +331,7 @@ function MainApp({ user, onLogout }) {
       </header>
 
       <main>
-        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} exercisedToday={exercisedToday} go={setView} isCoach={isCoach} userName={user.display_name} />}
+        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} exercisedToday={exercisedToday} go={setView} isCoach={isCoach} userName={user.display_name} journal={journal} sessions={sessions} />}
         {view === "practice" && <PraxisView scenarios={scenarios} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
@@ -352,21 +352,67 @@ function MainApp({ user, onLogout }) {
 }
 
 /* ── HOME ── */
-function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName }) {
+function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName, journal, sessions }) {
   const [showInfo, setShowInfo] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const h = new Date().getHours();
   const firstName = userName ? userName.split(" ")[0] : "";
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
   const GOAL = 3;
   const pct = Math.min((weekDays / GOAL) * 100, 100);
+
+  // Confetti on goal reached (once per session)
+  useEffect(() => {
+    if (goalReached && !sessionStorage.getItem("iv_confetti_shown")) {
+      setShowConfetti(true);
+      sessionStorage.setItem("iv_confetti_shown", "1");
+      setTimeout(() => setShowConfetti(false), 3000);
+    }
+  }, [goalReached]);
+
+  // Mood data (last 14 journal entries)
+  const recentMoods = journal.slice(0, 14).reverse();
+  const moodAvg = recentMoods.length ? (recentMoods.reduce((s, j) => s + j.mood, 0) / recentMoods.length).toFixed(1) : null;
+
+  // Self-talk distribution
+  const last30 = journal.slice(0, 30);
+  const neg = last30.filter(j => j.self_talk_type === "negative").length;
+  const neu = last30.filter(j => j.self_talk_type === "neutral").length;
+  const pos = last30.filter(j => j.self_talk_type === "positive").length;
+  const total = neg + neu + pos;
+  const negPct = total ? Math.round(neg / total * 100) : 0;
+  const posPct = total ? Math.round(pos / total * 100) : 0;
+  const neuPct = total ? 100 - negPct - posPct : 0;
+
+  // Session log (last 5)
+  const timeAgo = (d) => {
+    const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+    if (days === 0) return "Heute";
+    if (days === 1) return "Gestern";
+    return `Vor ${days} Tagen`;
+  };
+
+  const confettiColors = ["#DC2626", "#22C55E", "#EAB308", "#3B82F6", "#A855F7"];
+
   return (
-    <div style={{ padding: 16 }}>
+    <div style={{ padding: 16, position: "relative", overflow: "hidden" }}>
+      {/* Confetti */}
+      {showConfetti && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 999 }}>
+          {[...Array(30)].map((_, i) => (
+            <div key={i} style={{ position: "absolute", top: -10, left: `${Math.random() * 100}%`, width: 8, height: 8, borderRadius: Math.random() > 0.5 ? 4 : 0, background: confettiColors[i % confettiColors.length], animation: `confettiFall ${2 + Math.random() * 2}s ease-out ${Math.random() * 0.5}s forwards` }} />
+          ))}
+        </div>
+      )}
+
       <Card style={{ padding: 20, marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
         <div style={{ fontSize: 12, color: C.red, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{greet}{firstName ? `, ${firstName}` : ""}</div>
         <h2 style={{ fontSize: 19, fontWeight: 700, color: C.white, lineHeight: 1.3, marginBottom: 6 }}>Wie sprichst du heute mit dir?</h2>
         <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.5 }}>Trainiere deinen inneren Dialog bewusst.</p>
       </Card>
-      <Card style={{ padding: 18, marginBottom: 20 }}>
+
+      {/* Wochenziel */}
+      <Card style={{ padding: 18, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>Wochenziel</div>
           <button onClick={() => setShowInfo(!showInfo)} style={{ width: 22, height: 22, borderRadius: 11, border: `1px solid ${C.borderLight}`, background: "none", color: C.textSoft, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button>
@@ -386,8 +432,10 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
           <div style={{ height: "100%", background: goalReached ? C.green : C.red, borderRadius: 4, width: `${pct}%`, transition: "width 0.4s ease" }} />
         </div>
       </Card>
+
+      {/* Schnellstart */}
       <Label>Schnellstart</Label>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}>
         {[{ icon: "▶", label: "Praxis", desc: "Szenarien üben", v: "practice", done: exercisedToday }, { icon: "⟲", label: "Reframe", desc: "Gedanken umdrehen", v: "reframer" }, { icon: "✎", label: "Journal", desc: "Eintrag schreiben", v: "journal" }, ...(isCoach ? [{ icon: "👁", label: "Coach", desc: "Klienten ansehen", v: "coach" }] : [])].map((a, i) => (
           <button key={i} onClick={() => go(a.v)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 12px", cursor: "pointer", textAlign: "left", position: "relative" }}>
             <div style={{ fontSize: 20, marginBottom: 4 }}>{a.icon}</div>
@@ -397,7 +445,61 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
           </button>
         ))}
       </div>
-      <button onClick={() => go("science")} style={{ width: "100%", padding: "12px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+
+      {/* Mein Fortschritt – Stimmungsverlauf */}
+      {recentMoods.length > 1 && (
+        <Card style={{ padding: 16, marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>Stimmungsverlauf</div>
+            {moodAvg && <div style={{ fontSize: 12, color: C.textMid }}>Ø {moodAvg}/5</div>}
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 50 }}>
+            {recentMoods.map((j, i) => {
+              const barH = (j.mood / 5) * 40 + 10;
+              const color = j.mood >= 4 ? C.green : j.mood >= 3 ? "#EAB308" : "#EF4444";
+              return <div key={i} style={{ flex: 1, height: barH, background: color, borderRadius: 3, opacity: 0.8, transition: "height 0.3s" }} />;
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Self-Talk Verteilung */}
+      {total > 0 && (
+        <Card style={{ padding: 16, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Self-Talk Verteilung</div>
+          <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 8 }}>
+            {posPct > 0 && <div style={{ width: `${posPct}%`, background: C.green, transition: "width 0.4s" }} />}
+            {neuPct > 0 && <div style={{ width: `${neuPct}%`, background: "#EAB308", transition: "width 0.4s" }} />}
+            {negPct > 0 && <div style={{ width: `${negPct}%`, background: "#EF4444", transition: "width 0.4s" }} />}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+            <span style={{ color: C.green }}>Positiv {posPct}%</span>
+            <span style={{ color: "#EAB308" }}>Neutral {neuPct}%</span>
+            <span style={{ color: "#EF4444" }}>Negativ {negPct}%</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Letzte Aktivitäten */}
+      {sessions.length > 0 && (
+        <Card style={{ padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Letzte Aktivitäten</div>
+          {sessions.slice(0, 5).map((s, i) => (
+            <div key={s.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < Math.min(sessions.length, 5) - 1 ? `1px solid ${C.border}` : "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14 }}>{s.session_type === "practice" ? "▶" : "⟲"}</span>
+                <div>
+                  <div style={{ fontSize: 13, color: C.white }}>{s.session_type === "practice" ? "Praxis-Session" : "Reframe-Übung"}</div>
+                  <div style={{ fontSize: 11, color: C.textSoft }}>{s.phrases_count} {s.session_type === "practice" ? "Sätze" : "Karten"}</div>
+                </div>
+              </div>
+              <span style={{ fontSize: 11, color: C.textSoft }}>{timeAgo(s.created_at)}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      <button onClick={() => go("science")} style={{ width: "100%", padding: "12px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <span style={{ fontSize: 20 }}>📚</span>
         <div><div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>Die Wissenschaft dahinter</div><div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>Evidenzbasierte Grundlagen zum Self-Talk Training</div></div>
       </button>
@@ -419,6 +521,20 @@ function PraxisView({ scenarios, userId, record, reload }) {
   const [doneCount, setDoneCount] = useState(0);
   const [newPhrase, setNewPhrase] = useState("");
   const [newScen, setNewScen] = useState({ name: "", icon: "📌", description: "" });
+  const [reorderMode, setReorderMode] = useState(false);
+
+  const moveScenario = async (index, direction) => {
+    const swapIdx = index + direction;
+    if (swapIdx < 0 || swapIdx >= scenarios.length) return;
+    const a = scenarios[index];
+    const b = scenarios[swapIdx];
+    try {
+      const t = await sb.from("iv_scenarios");
+      await t.update({ created_at: b.created_at }, { id: a.id });
+      await t.update({ created_at: a.created_at }, { id: b.id });
+      reload();
+    } catch {}
+  };
 
   const sit = scenarios.find(s => s.id === activeSit);
   const sitPhrases = sit?.phrases || [];
@@ -554,10 +670,26 @@ function PraxisView({ scenarios, userId, record, reload }) {
         </Card>
       )}
 
-      <Btn onClick={() => setMode("multiSelect")} style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text, marginBottom: 16 }}>
+      <Btn onClick={() => setMode("multiSelect")} style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text, marginBottom: 12 }}>
         🎯 Mehrere Szenarien kombinieren
       </Btn>
 
+      <button onClick={() => setReorderMode(!reorderMode)} style={{ width: "100%", padding: 10, marginBottom: 12, background: reorderMode ? C.redSoft : "none", border: `1px solid ${reorderMode ? C.red : C.border}`, borderRadius: 8, color: reorderMode ? C.red : C.textSoft, fontSize: 13, cursor: "pointer" }}>
+        {reorderMode ? "✓ Sortierung fertig" : "↕ Szenarien sortieren"}
+      </button>
+
+      {reorderMode ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {scenarios.map((s, i) => (
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 12px" }}>
+              <span style={{ fontSize: 20 }}>{s.icon}</span>
+              <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: C.white }}>{s.name}</div>
+              <button onClick={() => moveScenario(i, -1)} disabled={i === 0} style={{ width: 30, height: 30, borderRadius: 6, border: `1px solid ${C.border}`, background: "none", color: i === 0 ? C.border : C.textMid, fontSize: 14, cursor: i === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>▲</button>
+              <button onClick={() => moveScenario(i, 1)} disabled={i === scenarios.length - 1} style={{ width: 30, height: 30, borderRadius: 6, border: `1px solid ${C.border}`, background: "none", color: i === scenarios.length - 1 ? C.border : C.textMid, fontSize: 14, cursor: i === scenarios.length - 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>▼</button>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {scenarios.map(s => (
           <div key={s.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
@@ -574,6 +706,7 @@ function PraxisView({ scenarios, userId, record, reload }) {
           </div>
         ))}
       </div>
+      )}
       <button onClick={() => setMode("addScen")} style={{ width: "100%", padding: 12, marginTop: 12, background: "none", border: `1px dashed ${C.borderLight}`, borderRadius: 8, color: C.textSoft, fontSize: 13, cursor: "pointer" }}>+ Neues Szenario erstellen</button>
     </div>
   );
