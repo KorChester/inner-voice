@@ -319,7 +319,7 @@ function MainApp({ user, onLogout }) {
     ...(isCoach ? [{ id: "coach", icon: "👁", label: "Coach" }] : []),
   ];
 
-  if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, color: C.textSoft }}>Daten werden geladen...</div>;
+  if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, color: C.textSoft }}>Deine innerre Stimmen werden geladen...</div>;
 
   return (
     <div style={{ paddingBottom: 82 }}>
