@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.8.0";
+const APP_VERSION = "1.8.2";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -346,10 +346,11 @@ function MainApp({ user, onLogout }) {
 
 /* ── HOME ── */
 function HomeView({ weekDays, goalReached, go, isCoach }) {
+  const [showInfo, setShowInfo] = useState(false);
   const h = new Date().getHours();
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
   const GOAL = 3;
-  const pct = Math.min((weekDays / GOAL) * 100, 100);
+  const pct = Math.min((weekDays / 7) * 100, 100);
   return (
     <div style={{ padding: 16 }}>
       <Card style={{ padding: 20, marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
@@ -358,19 +359,33 @@ function HomeView({ weekDays, goalReached, go, isCoach }) {
         <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.5 }}>Trainiere deinen inneren Dialog bewusst.</p>
       </Card>
       <Card style={{ padding: 18, marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Wochenziel</div>
-        <div style={{ fontSize: 17, fontWeight: 700, color: C.white, marginBottom: 4 }}>{weekDays} von {GOAL} Tagen diese Woche geübt</div>
-        <div style={{ fontSize: 12, color: C.textSoft, marginBottom: 12 }}>Praxis-Sessions & Reframe-Übungen zählen</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>Wochenziel</div>
+          <button onClick={() => setShowInfo(!showInfo)} style={{ width: 22, height: 22, borderRadius: 11, border: `1px solid ${C.borderLight}`, background: "none", color: C.textSoft, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button>
+        </div>
+        {showInfo && (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 13, color: C.textMid, lineHeight: 1.5 }}>
+            Übe an mindestens <strong style={{ color: C.white }}>3 verschiedenen Tagen</strong> pro Woche. Es zählen abgeschlossene Praxis-Sessions und Reframe-Karteikarten-Runden. Journal-Einträge zählen nicht als Übung. Die Woche läuft von Montag bis Sonntag.
+          </div>
+        )}
+        <div style={{ fontSize: 17, fontWeight: 700, color: C.white, marginBottom: 4 }}>
+          {weekDays} von 7 Tagen {goalReached && "✓"}
+        </div>
+        <div style={{ fontSize: 12, color: goalReached ? C.green : C.textSoft, marginBottom: 12 }}>
+          {goalReached ? (weekDays > GOAL ? `Ziel erreicht + ${weekDays - GOAL} Bonustage!` : "Wochenziel erreicht!") : `Noch ${GOAL - weekDays} ${GOAL - weekDays === 1 ? "Tag" : "Tage"} bis zum Ziel`}
+        </div>
         <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden", marginBottom: 10 }}>
           <div style={{ height: "100%", background: goalReached ? C.green : C.red, borderRadius: 4, width: `${pct}%`, transition: "width 0.4s ease" }} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            {[...Array(GOAL)].map((_, i) => (
-              <div key={i} style={{ width: 10, height: 10, borderRadius: 5, background: i < weekDays ? (goalReached ? C.green : C.red) : C.border }} />
-            ))}
-          </div>
-          {goalReached && <div style={{ fontSize: 13, fontWeight: 600, color: C.green }}>Wochenziel erreicht!</div>}
+        <div style={{ display: "flex", gap: 4 }}>
+          {[...Array(7)].map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < weekDays ? (goalReached ? C.green : C.red) : C.border, opacity: i >= GOAL && i >= weekDays ? 0.4 : 1 }} />
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+          <span style={{ fontSize: 9, color: C.textSoft }}>Mo</span>
+          <span style={{ fontSize: 9, color: goalReached ? C.green : C.textSoft }}>Ziel: {GOAL}</span>
+          <span style={{ fontSize: 9, color: C.textSoft }}>So</span>
         </div>
       </Card>
       <Label>Schnellstart</Label>
@@ -810,9 +825,10 @@ function CoachDashboard({ clients }) {
         const negPct = total ? Math.round(neg / total * 100) : 0;
         const posPct = total ? Math.round(pos / total * 100) : 0;
 
-        // Sessions this week vs last week
+        // Sessions this week vs last week (Monday-based)
         const now = new Date();
-        const startThisWeek = new Date(now); startThisWeek.setDate(now.getDate() - now.getDay());
+        const day = now.getDay();
+        const startThisWeek = new Date(now); startThisWeek.setDate(now.getDate() - ((day + 6) % 7)); startThisWeek.setHours(0, 0, 0, 0);
         const startLastWeek = new Date(startThisWeek); startLastWeek.setDate(startThisWeek.getDate() - 7);
         const sessionsThisWeek = cSessions.filter(s => new Date(s.created_at) >= startThisWeek).length;
         const sessionsLastWeek = cSessions.filter(s => { const d = new Date(s.created_at); return d >= startLastWeek && d < startThisWeek; }).length;
