@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.8.2";
+const APP_VERSION = "1.8.3";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -350,7 +350,7 @@ function HomeView({ weekDays, goalReached, go, isCoach }) {
   const h = new Date().getHours();
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
   const GOAL = 3;
-  const pct = Math.min((weekDays / 7) * 100, 100);
+  const pct = Math.min((weekDays / GOAL) * 100, 100);
   return (
     <div style={{ padding: 16 }}>
       <Card style={{ padding: 20, marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
@@ -369,23 +369,13 @@ function HomeView({ weekDays, goalReached, go, isCoach }) {
           </div>
         )}
         <div style={{ fontSize: 17, fontWeight: 700, color: C.white, marginBottom: 4 }}>
-          {weekDays} von 7 Tagen {goalReached && "✓"}
+          {goalReached ? `${weekDays} Tage geübt ✓` : `${weekDays} von ${GOAL} Tagen`}
         </div>
         <div style={{ fontSize: 12, color: goalReached ? C.green : C.textSoft, marginBottom: 12 }}>
           {goalReached ? (weekDays > GOAL ? `Ziel erreicht + ${weekDays - GOAL} Bonustage!` : "Wochenziel erreicht!") : `Noch ${GOAL - weekDays} ${GOAL - weekDays === 1 ? "Tag" : "Tage"} bis zum Ziel`}
         </div>
-        <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden", marginBottom: 10 }}>
+        <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden" }}>
           <div style={{ height: "100%", background: goalReached ? C.green : C.red, borderRadius: 4, width: `${pct}%`, transition: "width 0.4s ease" }} />
-        </div>
-        <div style={{ display: "flex", gap: 4 }}>
-          {[...Array(7)].map((_, i) => (
-            <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < weekDays ? (goalReached ? C.green : C.red) : C.border, opacity: i >= GOAL && i >= weekDays ? 0.4 : 1 }} />
-          ))}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-          <span style={{ fontSize: 9, color: C.textSoft }}>Mo</span>
-          <span style={{ fontSize: 9, color: goalReached ? C.green : C.textSoft }}>Ziel: {GOAL}</span>
-          <span style={{ fontSize: 9, color: C.textSoft }}>So</span>
         </div>
       </Card>
       <Label>Schnellstart</Label>
