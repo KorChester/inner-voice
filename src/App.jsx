@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.3.1";
+const APP_VERSION = "2.3.2";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -539,7 +539,7 @@ function PraxisView({ scenarios, userId, record, reload }) {
           <Label>Name</Label><input value={newScen.name} onChange={e => setNewScen({ ...newScen, name: e.target.value })} placeholder="z.B. Prüfungsangst" style={{ ...inputStyle, marginBottom: 12 }} />
           <Label>Emoji</Label><input value={newScen.icon} onChange={e => setNewScen({ ...newScen, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 12, width: 60 }} />
           <Label>Beschreibung</Label><input value={newScen.description} onChange={e => setNewScen({ ...newScen, description: e.target.value })} placeholder="Kurze Beschreibung" style={{ ...inputStyle, marginBottom: 14 }} />
-          <Btn onClick={async () => { if (!newScen.name.trim()) return; try { const t = await sb.from("iv_scenarios"); await t.insert({ user_id: userId, name: newScen.name.trim(), icon: newScen.icon || "📌", description: newScen.description.trim(), sort_order: scenarios.length }); setNewScen({ name: "", icon: "📌", description: "" }); reload(); reset(); } catch {} }} disabled={!newScen.name.trim()}>Erstellen</Btn>
+          <Btn onClick={async () => { if (!newScen.name.trim()) return; try { const maxOrder = scenarios.length ? Math.max(...scenarios.map(s => s.sort_order ?? 0)) + 1 : 0; const t = await sb.from("iv_scenarios"); await t.insert({ user_id: userId, name: newScen.name.trim(), icon: newScen.icon || "📌", description: newScen.description.trim(), sort_order: maxOrder }); setNewScen({ name: "", icon: "📌", description: "" }); reload(); reset(); } catch {} }} disabled={!newScen.name.trim()}>Erstellen</Btn>
         </Card>
       </div>
     );
