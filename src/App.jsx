@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.1.0";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -35,69 +35,74 @@ const sb = {
 /* ── SEED SCENARIOS (für neue User) ── */
 const SEED_SCENARIOS = [
   { name: "Vor dem Training", icon: "⚡", description: "Mentale Vorbereitung vor der Session.", phrases: [
-    "Mein Körper ist stark, mein Geist ist fokussiert.",
-    "Heute werde ich besser als gestern.",
-    "Mein Plan steht. Ich ziehe ihn durch.",
+    "Körper bereit. Kopf fokussiert.",
+    "Heute besser als gestern.",
+    "Dein Plan steht. Zieh durch.",
   ]},
   { name: "Während des Trainings", icon: "🔥", description: "Push-Modus. Dranbleiben.", phrases: [
-    "Eine Wiederholung nach der anderen.",
-    "Der Schmerz ist temporär, der Stolz bleibt.",
-    "Mein Körper kann mehr als mein Kopf denkt.",
+    "Eine Wiederholung. Dann die nächste.",
+    "Temporär. Der Stolz bleibt.",
+    "Du kannst mehr. Weiter.",
   ]},
   { name: "Bei Rückschlägen", icon: "🛡️", description: "Wenn es nicht läuft wie geplant.", phrases: [
-    "Rückschläge sind Teil des Weges, nicht das Ende.",
-    "Das definiert mich nicht. Mein Comeback schon.",
-    "Ich falle hin, aber ich stehe immer wieder auf.",
+    "Teil des Weges. Weiter.",
+    "Mein Comeback definiert mich.",
+    "Aufstehen. Immer wieder aufstehen.",
   ]},
   { name: "Selbstvertrauen", icon: "👑", description: "Glaube an dich und deine Fähigkeiten.", phrases: [
-    "Ich vertraue meinem Training und meiner Vorbereitung.",
-    "Ich bin genug. Genau so wie ich bin.",
-    "Ich glaube an mich, auch wenn es gerade schwer ist.",
+    "Du bist vorbereitet. Vertrau dir.",
+    "Ich bin genug.",
+    "Du schaffst das. Du weißt es.",
   ]},
   { name: "Wettkampftag", icon: "🏆", description: "Kurz vor dem Wettkampf. Anspannung nutzen.", phrases: [
-    "Ich habe mich vorbereitet. Ich bin bereit.",
-    "Aufregung ist Energie – ich nutze sie für mich.",
+    "Vorbereitet. Bereit. Los.",
+    "Aufregung ist Energie. Nutze sie.",
     "Ich konzentriere mich auf meinen Prozess, nicht auf das Ergebnis.",
   ]},
   { name: "Motivationstief", icon: "🔋", description: "Keine Lust, Zweifel am Sinn.", phrases: [
-    "Motivation kommt und geht – Disziplin bleibt.",
-    "Ich muss nicht motiviert sein, um anzufangen.",
-    "Heute ist der Tag, an dem andere aufgeben. Ich nicht.",
+    "Disziplin schlägt Motivation.",
+    "Einfach anfangen. Der Rest kommt.",
+    "Du zeigst heute auf. Das reicht.",
   ]},
-  { name: "Vergleich mit anderen", icon: "👥", description: "Du vergleichst dich ständig.", phrases: [
-    "Mein einziger Gegner bin ich von gestern.",
-    "Ich kenne ihre Geschichte nicht – nur meine eigene.",
-    "Social Media zeigt Highlights, nicht die Realität.",
+  { name: "Vergleich mit anderen", icon: "👥", description: "Du vergleichst dich mit anderen.", phrases: [
+    "Mein einziger Gegner: mein gestriges Ich.",
+    "Dein Weg. Dein Tempo.",
+    "Fokus auf deinen Fortschritt.",
   ]},
   { name: "Regeneration", icon: "🌱", description: "Nach dem Training. Loslassen und aufladen.", phrases: [
-    "Ich habe heute mein Bestes gegeben, das reicht.",
-    "Erholung ist Teil des Trainings, nicht Schwäche.",
-    "Ich bin stolz auf das, was ich heute geschafft habe.",
+    "Mein Bestes gegeben. Das reicht.",
+    "Erholung ist Training.",
+    "Stolz auf heute. Bereit für morgen.",
   ]},
   { name: "Fokus & Konzentration", icon: "🎯", description: "Ablenkungen loslassen, Präsenz stärken.", phrases: [
-    "Jetzt. Hier. Dieser Moment zählt.",
-    "Ich kontrolliere meine Gedanken – nicht umgekehrt.",
-    "Was nicht in meiner Kontrolle liegt, lasse ich los.",
+    "Jetzt. Hier. Dieser Moment.",
+    "Meine Gedanken, meine Kontrolle.",
+    "Nur das Hier und Jetzt.",
   ]},
   { name: "Druck von außen", icon: "💬", description: "Erwartungen von Trainer, Familie oder Social Media.", phrases: [
-    "Ich trainiere für mich – nicht für die Meinung anderer.",
-    "Ich setze meine eigenen Maßstäbe.",
-    "Ihre Erwartungen sind nicht meine Verantwortung.",
+    "Ich trainiere für mich.",
+    "Meine Maßstäbe. Mein Weg.",
+    "Du bestimmst, was zählt.",
   ]},
   { name: "Nach Verletzung", icon: "🩹", description: "Comeback nach einer Verletzungspause.", phrases: [
-    "Mein Körper heilt. Ich gebe ihm die Zeit, die er braucht.",
-    "Ich komme stärker zurück – mental und physisch.",
-    "Ich kann heute das tun, was möglich ist – das ist genug.",
+    "Mein Körper heilt. Geduld.",
+    "Stärker zurück. Mental und physisch.",
+    "Was heute geht, ist genug.",
   ]},
   { name: "Morgenroutine", icon: "☀️", description: "Den Tag mit der richtigen Einstellung starten.", phrases: [
-    "Heute ist ein guter Tag, um stärker zu werden.",
-    "Ich entscheide, wie dieser Tag wird.",
-    "Mein Mindset bestimmt meinen Erfolg.",
+    "Guter Tag, um stärker zu werden.",
+    "Du entscheidest, wie der Tag wird.",
+    "Dein Mindset. Dein Erfolg.",
   ]},
   { name: "Selbstzweifel", icon: "🌧️", description: "Wenn du an dir selbst zweifelst.", phrases: [
-    "Zweifel sind normal – sie beweisen, dass mir das wichtig ist.",
-    "Ich bin nicht meine Gedanken. Ich bin meine Taten.",
-    "Ich erlaube mir, unperfekt zu sein und trotzdem weiterzumachen.",
+    "Zweifel zeigen: Das hier ist dir wichtig.",
+    "Ich bin meine Taten.",
+    "Unperfekt und trotzdem stark.",
+  ]},
+  { name: "Technik & Präzision", icon: "🏹", description: "Instruktionale Cues für präzise Sportarten.", phrases: [
+    "Ruhige Hand. Klarer Blick.",
+    "Atmen. Spannung. Ausführen.",
+    "Sauber und kontrolliert.",
   ]},
 ];
 
@@ -209,7 +214,7 @@ function AuthScreen({ onAuth, error, view, setView }) {
   return (
     <div style={{ padding: 24, display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "100vh" }}>
       <div style={{ textAlign: "center", marginBottom: 36 }}>
-        <svg width="50" height="50" viewBox="0 0 40 40"><rect width="40" height="40" rx="7" fill={C.red}/><text x="7" y="19" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">P</text><text x="7" y="35" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">U</text></svg>
+        <img src="/pu-logo.webp" alt="PU" style={{ width: 50, height: 50, borderRadius: 8, objectFit: "contain" }} />
         <h1 style={{ fontSize: 22, fontWeight: 700, color: C.white, marginTop: 12, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2 }}>INNER VOICE</h1>
         <p style={{ fontSize: 11, color: C.textSoft, letterSpacing: 2, textTransform: "uppercase" }}>by Coach Chang · Physiques Unlimited</p>
       </div>
@@ -319,7 +324,7 @@ function MainApp({ user, onLogout }) {
     <div style={{ paddingBottom: 82 }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: C.bg, position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="24" height="24" viewBox="0 0 40 40"><rect width="40" height="40" rx="7" fill={C.red}/><text x="7" y="19" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">P</text><text x="7" y="35" fill="white" fontSize="16" fontWeight="800" fontFamily="sans-serif">U</text></svg>
+          <img src="/pu-logo.webp" alt="PU" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "contain" }} />
           <div><div style={{ fontSize: 13, fontWeight: 700, color: C.white }}>INNER VOICE</div><div style={{ fontSize: 10, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>{user.display_name} {isCoach && "· COACH"}</div></div>
         </div>
         <button onClick={onLogout} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSoft, fontSize: 12, padding: "5px 12px", cursor: "pointer" }}>Logout</button>
