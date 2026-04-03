@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.7.3";
+const APP_VERSION = "1.8.0";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -292,18 +292,17 @@ function MainApp({ user, onLogout }) {
 
   const recordSession = async (type, count) => { try { const t = await sb.from("iv_practice_sessions"); const [s] = await t.insert({ user_id: user.id, session_type: type, phrases_count: count }); setSessions(p => [s, ...p]); } catch {} };
 
-  const calcStreak = () => {
-    if (!sessions.length) return { streak: 0, doneToday: false };
-    const dates = [...new Set(sessions.map(s => s.created_at.slice(0, 10)))].sort().reverse();
-    const today = new Date().toISOString().slice(0, 10);
-    const doneToday = dates[0] === today;
-    let streak = doneToday ? 1 : 0;
-    for (let i = doneToday ? 1 : 0; i < dates.length; i++) { const exp = new Date(Date.now() - (i + (doneToday ? 0 : 1)) * 86400000).toISOString().slice(0, 10); if (dates[i] === exp) streak++; else break; }
-    return { streak, doneToday };
+  const calcWeeklyGoal = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7));
+    monday.setHours(0, 0, 0, 0);
+    const weekDays = [...new Set(sessions.filter(s => new Date(s.created_at) >= monday).map(s => s.created_at.slice(0, 10)))];
+    return { weekDays: weekDays.length, goalReached: weekDays.length >= 3 };
   };
 
-  const { streak, doneToday } = calcStreak();
-  const totalPhrases = scenarios.reduce((s, sc) => s + sc.phrases.length, 0);
+  const { weekDays, goalReached } = calcWeeklyGoal();
 
   const NAV = [
     { id: "home", icon: "◈", label: "Home" },
@@ -326,7 +325,7 @@ function MainApp({ user, onLogout }) {
       </header>
 
       <main>
-        {view === "home" && <HomeView streak={streak} doneToday={doneToday} scenarioCount={scenarios.length} totalPhrases={totalPhrases} reframeCount={reframes.length} journalCount={journal.length} go={setView} isCoach={isCoach} />}
+        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} go={setView} isCoach={isCoach} />}
         {view === "practice" && <PraxisView scenarios={scenarios} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
@@ -346,9 +345,11 @@ function MainApp({ user, onLogout }) {
 }
 
 /* ── HOME ── */
-function HomeView({ streak, doneToday, scenarioCount, totalPhrases, reframeCount, journalCount, go, isCoach }) {
+function HomeView({ weekDays, goalReached, go, isCoach }) {
   const h = new Date().getHours();
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
+  const GOAL = 3;
+  const pct = Math.min((weekDays / GOAL) * 100, 100);
   return (
     <div style={{ padding: 16 }}>
       <Card style={{ padding: 20, marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
@@ -356,15 +357,22 @@ function HomeView({ streak, doneToday, scenarioCount, totalPhrases, reframeCount
         <h2 style={{ fontSize: 19, fontWeight: 700, color: C.white, lineHeight: 1.3, marginBottom: 6 }}>Wie sprichst du heute mit dir?</h2>
         <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.5 }}>Trainiere deinen inneren Dialog bewusst.</p>
       </Card>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-        {[{ v: streak, l: "Streak", dot: doneToday }, { v: scenarioCount, l: "Szenarien" }, { v: reframeCount, l: "Reframes" }, { v: journalCount, l: "Journal" }].map((s, i) => (
-          <Card key={i} style={{ padding: "12px 6px", textAlign: "center", position: "relative" }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{s.v}</div>
-            <div style={{ fontSize: 10, color: C.textSoft, textTransform: "uppercase" }}>{s.l}</div>
-            {s.dot && <div style={{ position: "absolute", top: 5, right: 5, width: 6, height: 6, borderRadius: 3, background: C.green }} />}
-          </Card>
-        ))}
-      </div>
+      <Card style={{ padding: 18, marginBottom: 20 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Wochenziel</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: C.white, marginBottom: 4 }}>{weekDays} von {GOAL} Tagen diese Woche geübt</div>
+        <div style={{ fontSize: 12, color: C.textSoft, marginBottom: 12 }}>Praxis-Sessions & Reframe-Übungen zählen</div>
+        <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden", marginBottom: 10 }}>
+          <div style={{ height: "100%", background: goalReached ? C.green : C.red, borderRadius: 4, width: `${pct}%`, transition: "width 0.4s ease" }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[...Array(GOAL)].map((_, i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: 5, background: i < weekDays ? (goalReached ? C.green : C.red) : C.border }} />
+            ))}
+          </div>
+          {goalReached && <div style={{ fontSize: 13, fontWeight: 600, color: C.green }}>Wochenziel erreicht!</div>}
+        </div>
+      </Card>
       <Label>Schnellstart</Label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 22 }}>
         {[{ icon: "▶", label: "Praxis", desc: "Szenarien üben", v: "practice" }, { icon: "⟲", label: "Reframe", desc: "Gedanken umdrehen", v: "reframer" }, { icon: "✎", label: "Journal", desc: "Eintrag schreiben", v: "journal" }, ...(isCoach ? [{ icon: "👁", label: "Coach", desc: "Klienten ansehen", v: "coach" }] : [])].map((a, i) => (
