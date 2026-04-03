@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.4.1";
+const APP_VERSION = "2.4.2";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -45,12 +45,12 @@ const SEED_SCENARIOS = [
     "Du kannst mehr. Weiter.",
   ]},
   { name: "Bei Rückschlägen", icon: "🛡️", description: "Wenn es nicht läuft wie geplant.", phrases: [
-    "Rückschläge gehören zum Weg – sie sind ein Teil davon.",
-    "Das hier definiert mich nicht. Mein Comeback schon.",
-    "Aufstehen. Immer wieder aufstehen. Das zählt.",
+    "Das hier ist ein Rückschlag, nicht das Ende. Du gehst weiter.",
+    "Das definiert dich nicht. Dein Comeback schon.",
+    "Du stehst auf. Immer wieder. Das ist deine Stärke.",
   ]},
   { name: "Selbstvertrauen", icon: "👑", description: "Glaube an dich und deine Fähigkeiten.", phrases: [
-    "Du hast dafür trainiert. Vertrau deiner Vorbereitung.",
+    "Ich habe dafür trainiert. Ich vertraue meiner Vorbereitung.",
     "Ich bin genug – genau so, wie ich bin.",
     "Du schaffst das. Tief in dir weißt du es.",
   ]},
@@ -95,9 +95,9 @@ const SEED_SCENARIOS = [
     "Mein Mindset bestimmt meinen Erfolg.",
   ]},
   { name: "Selbstzweifel", icon: "🌧️", description: "Wenn du an dir selbst zweifelst.", phrases: [
-    "Zweifel zeigen mir, dass mir das hier wirklich wichtig ist.",
-    "Ich bin nicht meine Gedanken. Ich bin das, was ich tue.",
-    "Ich darf unperfekt sein und trotzdem weitermachen.",
+    "Hey, Zweifel zeigen dir, dass dir das hier wichtig ist.",
+    "Du bist nicht deine Gedanken. Du bist das, was du tust.",
+    "Du darfst unperfekt sein und trotzdem weitermachen.",
   ]},
   { name: "Technik & Präzision", icon: "🏹", description: "Instruktionale Cues für präzise Sportarten.", phrases: [
     "Ruhige Hand. Klarer Blick.",
@@ -1141,15 +1141,19 @@ function ScienceView({ goBack }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>2. Selbstdistanzierung: "Du" statt "Ich"</div>
-          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Forschung zeigt, dass die Ansprache in der zweiten Person ("Du schaffst das") oder mit dem eigenen Namen ("Markus, fokus!") die emotionale Regulation verbessert. Die psychologische Distanz reduziert Druck.</p>
-          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
-            <div style={{ flex: 1, padding: 8, background: "#DC262615", borderRadius: 6, fontSize: 12, color: "#F87171" }}>✗ "Ich bin nervös, aber ich schaffe das"</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>2. "Du" oder "Ich" – je nach Situation</div>
+          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Die Du-Form ("Du schaffst das") erzeugt psychologische Distanz – du wirst quasi dein eigener Coach. Das hilft bei Stress, Angst und wenn der innere Kritiker laut ist. Die Ich-Form ("Ich bin genug") verankert dagegen Überzeugungen im Selbstbild und stärkt die Identität.</p>
+          <div style={{ background: C.surface, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: "#A855F7", fontWeight: 600, marginBottom: 4 }}>DU-FORM – BEI STRESS & EMOTIONEN</div>
+            <div style={{ fontSize: 12, color: C.green, marginBottom: 2 }}>✓ "Du bist nicht deine Gedanken. Du bist das, was du tust."</div>
+            <div style={{ fontSize: 11, color: C.textSoft }}>→ Selbstzweifel, Rückschläge, Versagensangst</div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={{ flex: 1, padding: 8, background: "#22C55E15", borderRadius: 6, fontSize: 12, color: C.green }}>✓ "Du bist vorbereitet. Du schaffst das."</div>
+          <div style={{ background: C.surface, borderRadius: 8, padding: 10 }}>
+            <div style={{ fontSize: 11, color: "#A855F7", fontWeight: 600, marginBottom: 4 }}>ICH-FORM – FÜR IDENTITÄT & ÜBERZEUGUNGEN</div>
+            <div style={{ fontSize: 12, color: C.green, marginBottom: 2 }}>✓ "Ich bin genug – genau so, wie ich bin."</div>
+            <div style={{ fontSize: 11, color: C.textSoft }}>→ Selbstvertrauen, Motivation, Werte</div>
           </div>
-          <div style={{ marginTop: 4 }}><Ref>(Kross et al., 2014)</Ref></div>
+          <div style={{ marginTop: 6 }}><Ref>(Kross et al., 2014)</Ref></div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
