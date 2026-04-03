@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "2.0.0";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -330,6 +330,7 @@ function MainApp({ user, onLogout }) {
         {view === "practice" && <PraxisView scenarios={scenarios} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
+        {view === "science" && <ScienceView goBack={() => setView("home")} />}
         {view === "coach" && isCoach && <CoachDashboard clients={coachClients} />}
       </main>
 
@@ -391,6 +392,10 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
           </button>
         ))}
       </div>
+      <button onClick={() => go("science")} style={{ width: "100%", padding: "12px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+        <span style={{ fontSize: 20 }}>📚</span>
+        <div><div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>Die Wissenschaft dahinter</div><div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>Evidenzbasierte Grundlagen zum Self-Talk Training</div></div>
+      </button>
       <Card style={{ padding: "16px 18px", textAlign: "center", borderTop: `2px solid ${C.red}` }}>
         <p style={{ fontSize: 14, fontStyle: "italic", color: C.textMid, lineHeight: 1.6 }}>"Der wichtigste Mensch, mit dem du je reden wirst, bist du selbst."</p>
         <div style={{ fontSize: 11, color: C.textSoft, marginTop: 6, letterSpacing: 1.5, textTransform: "uppercase" }}>— Coach Chang</div>
@@ -780,6 +785,156 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
           ))}
         </>
       )}
+    </div>
+  );
+}
+
+/* ── SCIENCE VIEW ── */
+function ScienceView({ goBack }) {
+  const [openSection, setOpenSection] = useState(null);
+  const toggle = (s) => setOpenSection(openSection === s ? null : s);
+
+  const Section = ({ id, title, children }) => (
+    <Card style={{ marginBottom: 10, overflow: "hidden" }}>
+      <button onClick={() => toggle(id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", width: "100%", background: "none", border: "none", color: C.white, cursor: "pointer", fontSize: 15, fontWeight: 600, textAlign: "left" }}>
+        {title}
+        <span style={{ color: C.textSoft, fontSize: 13, transform: openSection === id ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+      </button>
+      {openSection === id && <div style={{ padding: "0 16px 16px", fontSize: 14, color: C.textMid, lineHeight: 1.7 }}>{children}</div>}
+    </Card>
+  );
+
+  const Ref = ({ children }) => <span style={{ fontSize: 12, color: C.textSoft }}>{children}</span>;
+
+  return (
+    <div style={{ padding: 16 }}>
+      <button onClick={goBack} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer", marginBottom: 14 }}>← Zurück</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>DIE WISSENSCHAFT</h2>
+      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Evidenzbasierte Grundlagen des Self-Talk Trainings.</p>
+
+      {/* Visual: What is Self-Talk */}
+      <Card style={{ padding: 18, marginBottom: 16, borderTop: `2px solid ${C.red}` }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.red, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Was ist Self-Talk?</div>
+        <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.7, marginBottom: 12 }}>
+          Self-Talk bezeichnet den inneren Dialog, den wir ständig mit uns selbst führen. In der Sportpsychologie wird gezielter Self-Talk als kognitive Strategie eingesetzt, um Leistung, Motivation und emotionale Regulation zu verbessern.
+        </p>
+        <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6 }}>
+          Eine Meta-Analyse über 32 Studien zeigt, dass strategischer Self-Talk eine <strong style={{ color: C.white }}>signifikante positive Wirkung</strong> auf sportliche Leistung hat – sowohl bei Fein- als auch bei Grobmotorik.
+        </p>
+        <Ref>(Hatzigeorgiadis et al., 2011)</Ref>
+      </Card>
+
+      {/* Visual: How it works */}
+      <Card style={{ padding: 18, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.red, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Wie wirkt Self-Talk?</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+          {[
+            { icon: "🧠", title: "Kognitive Ebene", desc: "Fokussiert Aufmerksamkeit, reduziert ablenkende Gedanken und stärkt Konzentration." },
+            { icon: "💪", title: "Motivationale Ebene", desc: "Steigert Selbstvertrauen, Durchhaltevermögen und Anstrengungsbereitschaft." },
+            { icon: "🎯", title: "Instruktionale Ebene", desc: "Verbessert Technik und Bewegungsausführung durch verbale Cues." },
+            { icon: "🛡️", title: "Emotionale Ebene", desc: "Reguliert Angst, Nervosität und Frustration in Drucksituationen." },
+          ].map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, padding: 10, background: C.surface, borderRadius: 8 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{item.icon}</span>
+              <div><div style={{ fontSize: 13, fontWeight: 600, color: C.white, marginBottom: 2 }}>{item.title}</div><div style={{ fontSize: 12, color: C.textSoft, lineHeight: 1.5 }}>{item.desc}</div></div>
+            </div>
+          ))}
+        </div>
+        <Ref>(Hardy, 2006; Tod et al., 2011)</Ref>
+      </Card>
+
+      {/* Visual: 4 Principles */}
+      <Card style={{ padding: 18, marginBottom: 16, borderLeft: `3px solid ${C.green}` }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.green, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>4 Prinzipien für wirksame Sätze</div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>1. Kurz und prägnant</div>
+          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Kurze Cue-Wörter (2–5 Wörter) sind im Wettkampf effektiver als lange Sätze. Im Moment der Belastung hat das Gehirn keine Kapazität für komplexe Formulierungen.</p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+            <div style={{ flex: 1, padding: 8, background: "#DC262615", borderRadius: 6, fontSize: 12, color: "#F87171" }}>✗ "Ich konzentriere mich jetzt auf meinen Prozess und nicht auf das Ergebnis"</div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1, padding: 8, background: "#22C55E15", borderRadius: 6, fontSize: 12, color: C.green }}>✓ "Mein Prozess. Mein Tempo."</div>
+          </div>
+          <div style={{ marginTop: 4 }}><Ref>(Theodorakis et al., 2000)</Ref></div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>2. Selbstdistanzierung: "Du" statt "Ich"</div>
+          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Forschung zeigt, dass die Ansprache in der zweiten Person ("Du schaffst das") oder mit dem eigenen Namen ("Markus, fokus!") die emotionale Regulation verbessert. Die psychologische Distanz reduziert Druck.</p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+            <div style={{ flex: 1, padding: 8, background: "#DC262615", borderRadius: 6, fontSize: 12, color: "#F87171" }}>✗ "Ich bin nervös, aber ich schaffe das"</div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1, padding: 8, background: "#22C55E15", borderRadius: 6, fontSize: 12, color: C.green }}>✓ "Du bist vorbereitet. Du schaffst das."</div>
+          </div>
+          <div style={{ marginTop: 4 }}><Ref>(Kross et al., 2014)</Ref></div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>3. Positiv formulieren – keine Verneinung</div>
+          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Das Gehirn verarbeitet Verneinungen schlechter als positive Bilder. "Ich bin nicht schwach" aktiviert trotzdem das Konzept "schwach". Formuliere ausschließlich das gewünschte Bild.</p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+            <div style={{ flex: 1, padding: 8, background: "#DC262615", borderRadius: 6, fontSize: 12, color: "#F87171" }}>✗ "Ich darf jetzt keinen Fehler machen"</div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1, padding: 8, background: "#22C55E15", borderRadius: 6, fontSize: 12, color: C.green }}>✓ "Sauber und präzise."</div>
+          </div>
+          <div style={{ marginTop: 4 }}><Ref>(Hardy, 2006)</Ref></div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>4. Zwei Typen kombinieren</div>
+          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Motivationale Sätze ("Ich bin stark") stärken Selbstvertrauen. Instruktionale Sätze ("Knie tief, Rücken gerade") verbessern Technik. Beides zusammen ist am effektivsten.</p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1, padding: 8, background: C.surface, borderRadius: 6 }}>
+              <div style={{ fontSize: 11, color: C.red, fontWeight: 600, marginBottom: 3 }}>MOTIVATIONAL</div>
+              <div style={{ fontSize: 12, color: C.textMid }}>"Stark. Bereit. Los."</div>
+            </div>
+            <div style={{ flex: 1, padding: 8, background: C.surface, borderRadius: 6 }}>
+              <div style={{ fontSize: 11, color: "#3B82F6", fontWeight: 600, marginBottom: 3 }}>INSTRUKTIONAL</div>
+              <div style={{ fontSize: 12, color: C.textMid }}>"Knie tief. Spannung halten."</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 4 }}><Ref>(Theodorakis et al., 2000; Tod et al., 2011)</Ref></div>
+        </div>
+      </Card>
+
+      {/* Dosierung */}
+      <Section id="dosierung" title="Optimale Trainingsfrequenz">
+        <p style={{ marginBottom: 8 }}>Die Forschung zur Gewohnheitsbildung zeigt, dass neue Verhaltensweisen durchschnittlich <strong style={{ color: C.white }}>66 Tage</strong> regelmäßiger Wiederholung benötigen, um automatisiert zu werden. Für Self-Talk Training empfiehlt die Literatur:</p>
+        <div style={{ background: C.surface, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><span style={{ color: C.white, fontWeight: 600 }}>Frequenz</span><span>3–5× pro Woche</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><span style={{ color: C.white, fontWeight: 600 }}>Dauer</span><span>3–5 Minuten pro Session</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: C.white, fontWeight: 600 }}>Zeitraum</span><span>Mindestens 8–10 Wochen</span></div>
+        </div>
+        <p style={{ marginBottom: 4 }}>Wichtig: Konsistenz schlägt Intensität. 3 Tage pro Woche über Monate ist effektiver als täglich für 2 Wochen. Deshalb arbeitet diese App mit einem Wochenziel von 3 Tagen.</p>
+        <Ref>(Lally et al., 2010; Hatzigeorgiadis et al., 2011)</Ref>
+      </Section>
+
+      {/* Personalisierung */}
+      <Section id="personal" title="Warum eigene Sätze am besten wirken">
+        <p style={{ marginBottom: 8 }}>Die vorinstallierten Sätze in dieser App sind Startpunkte – basierend auf evidenzbasierten Prinzipien. Die Forschung zeigt jedoch klar: <strong style={{ color: C.white }}>Selbst formulierte Sätze sind am wirksamsten.</strong></p>
+        <p style={{ marginBottom: 8 }}>Der Grund: Persönlich relevante Formulierungen aktivieren stärkere emotionale und kognitive Netzwerke. Ein Satz, der in deiner eigenen Sprache und aus deiner Erfahrung kommt, hat mehr Kraft als ein vorgefertigter Text.</p>
+        <p style={{ marginBottom: 4 }}>Nutze die Beispiele als Inspiration. Passe sie an, kürze sie, formuliere sie in deinen Worten um. In der Praxis-Ansicht kannst du jederzeit eigene Sätze zu jedem Szenario hinzufügen.</p>
+        <Ref>(Hardy et al., 2009; Tod et al., 2011)</Ref>
+      </Section>
+
+      {/* Literaturverzeichnis */}
+      <Card style={{ padding: 18, marginTop: 6 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.red, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Literaturverzeichnis (APA 7)</div>
+        {[
+          "Hardy, J. (2006). Speaking clearly: A critical review of the self-talk literature. Psychology of Sport and Exercise, 7(1), 81–97.",
+          "Hardy, J., Oliver, E., & Tod, D. (2009). A framework for the study and application of self-talk within sport. In S. D. Mellalieu & S. Hanton (Eds.), Advances in applied sport psychology (pp. 37–74). Routledge.",
+          "Hatzigeorgiadis, A., Zourbanos, N., Galanis, E., & Theodorakis, Y. (2011). Self-talk and sports performance: A meta-analysis. Perspectives on Psychological Science, 6(4), 348–356.",
+          "Kross, E., Bruehlman-Senecal, E., Park, J., Burson, A., Dougherty, A., Shablack, H., Bremner, R., Moser, J., & Ayduk, O. (2014). Self-talk as a regulatory mechanism: How you do it matters. Journal of Personality and Social Psychology, 106(2), 304–324.",
+          "Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W., & Wardle, J. (2010). How are habits formed: Modelling habit formation in the real world. European Journal of Social Psychology, 40(6), 998–1009.",
+          "Theodorakis, Y., Weinberg, R., Natsis, P., Douma, I., & Kazakas, P. (2000). The effects of motivational versus instructional self-talk on improving motor performance. The Sport Psychologist, 14(3), 253–271.",
+          "Tod, D., Hardy, J., & Oliver, E. (2011). Effects of self-talk: A systematic review. Journal of Sport and Exercise Psychology, 33(5), 666–687.",
+        ].map((ref, i) => (
+          <p key={i} style={{ fontSize: 12, color: C.textSoft, lineHeight: 1.6, marginBottom: 8, paddingLeft: 16, textIndent: -16 }}>{ref}</p>
+        ))}
+      </Card>
     </div>
   );
 }
