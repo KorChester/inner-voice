@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.8.4";
+const APP_VERSION = "1.9.0";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -298,11 +298,12 @@ function MainApp({ user, onLogout }) {
     const monday = new Date(now);
     monday.setDate(now.getDate() - ((day + 6) % 7));
     monday.setHours(0, 0, 0, 0);
-    const weekDays = [...new Set(sessions.filter(s => new Date(s.created_at) >= monday).map(s => s.created_at.slice(0, 10)))];
-    return { weekDays: weekDays.length, goalReached: weekDays.length >= 3 };
+    const uniqueDays = [...new Set(sessions.filter(s => new Date(s.created_at) >= monday).map(s => s.created_at.slice(0, 10)))];
+    const today = now.toISOString().slice(0, 10);
+    return { weekDays: uniqueDays.length, goalReached: uniqueDays.length >= 3, exercisedToday: uniqueDays.includes(today) };
   };
 
-  const { weekDays, goalReached } = calcWeeklyGoal();
+  const { weekDays, goalReached, exercisedToday } = calcWeeklyGoal();
 
   const NAV = [
     { id: "home", icon: "◈", label: "Home" },
@@ -325,7 +326,7 @@ function MainApp({ user, onLogout }) {
       </header>
 
       <main>
-        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} go={setView} isCoach={isCoach} />}
+        {view === "home" && <HomeView weekDays={weekDays} goalReached={goalReached} exercisedToday={exercisedToday} go={setView} isCoach={isCoach} userName={user.display_name} />}
         {view === "practice" && <PraxisView scenarios={scenarios} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
@@ -345,16 +346,17 @@ function MainApp({ user, onLogout }) {
 }
 
 /* ── HOME ── */
-function HomeView({ weekDays, goalReached, go, isCoach }) {
+function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName }) {
   const [showInfo, setShowInfo] = useState(false);
   const h = new Date().getHours();
+  const firstName = userName ? userName.split(" ")[0] : "";
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
   const GOAL = 3;
   const pct = Math.min((weekDays / GOAL) * 100, 100);
   return (
     <div style={{ padding: 16 }}>
       <Card style={{ padding: 20, marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
-        <div style={{ fontSize: 12, color: C.red, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{greet}</div>
+        <div style={{ fontSize: 12, color: C.red, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{greet}{firstName ? `, ${firstName}` : ""}</div>
         <h2 style={{ fontSize: 19, fontWeight: 700, color: C.white, lineHeight: 1.3, marginBottom: 6 }}>Wie sprichst du heute mit dir?</h2>
         <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.5 }}>Trainiere deinen inneren Dialog bewusst.</p>
       </Card>
@@ -380,11 +382,12 @@ function HomeView({ weekDays, goalReached, go, isCoach }) {
       </Card>
       <Label>Schnellstart</Label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 22 }}>
-        {[{ icon: "▶", label: "Praxis", desc: "Szenarien üben", v: "practice" }, { icon: "⟲", label: "Reframe", desc: "Gedanken umdrehen", v: "reframer" }, { icon: "✎", label: "Journal", desc: "Eintrag schreiben", v: "journal" }, ...(isCoach ? [{ icon: "👁", label: "Coach", desc: "Klienten ansehen", v: "coach" }] : [])].map((a, i) => (
-          <button key={i} onClick={() => go(a.v)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 12px", cursor: "pointer", textAlign: "left" }}>
+        {[{ icon: "▶", label: "Praxis", desc: "Szenarien üben", v: "practice", done: exercisedToday }, { icon: "⟲", label: "Reframe", desc: "Gedanken umdrehen", v: "reframer" }, { icon: "✎", label: "Journal", desc: "Eintrag schreiben", v: "journal" }, ...(isCoach ? [{ icon: "👁", label: "Coach", desc: "Klienten ansehen", v: "coach" }] : [])].map((a, i) => (
+          <button key={i} onClick={() => go(a.v)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 12px", cursor: "pointer", textAlign: "left", position: "relative" }}>
             <div style={{ fontSize: 20, marginBottom: 4 }}>{a.icon}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{a.label}</div>
             <div style={{ fontSize: 12, color: C.textSoft, marginTop: 2 }}>{a.desc}</div>
+            {a.done && <div style={{ position: "absolute", top: 8, right: 8, fontSize: 11, color: C.green, fontWeight: 600 }}>✓ heute</div>}
           </button>
         ))}
       </div>
@@ -456,7 +459,7 @@ function PraxisView({ scenarios, userId, record, reload }) {
           <input value={newPhrase} onChange={e => setNewPhrase(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && newPhrase.trim()) { try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} } }} placeholder="Neuen Satz hinzufügen..." style={{ ...inputStyle, flex: 1, padding: "8px 10px", fontSize: 13 }} />
           <button onClick={async () => { if (!newPhrase.trim()) return; try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} }} style={{ width: 34, height: 34, borderRadius: 6, border: "none", background: C.red, color: C.white, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
         </div>
-        <button onClick={async () => { try { const t = await sb.from("iv_scenarios"); await t.delete({ id: activeSit }); reload(); reset(); } catch {} }} style={{ display: "block", margin: "24px auto 0", background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Szenario löschen</button>
+        <button onClick={async () => { if (!confirm("Szenario wirklich löschen? Alle Sätze gehen verloren.")) return; try { const t = await sb.from("iv_scenarios"); await t.delete({ id: activeSit }); reload(); reset(); } catch {} }} style={{ display: "block", margin: "24px auto 0", background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Szenario löschen</button>
       </div>
     );
   }
@@ -523,11 +526,23 @@ function PraxisView({ scenarios, userId, record, reload }) {
     );
   }
 
+  // Satz des Tages (deterministic per day)
+  const allPhrases = scenarios.flatMap(s => s.phrases);
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  const dailyPhrase = allPhrases.length ? allPhrases[dayOfYear % allPhrases.length] : null;
+
   // Select (default)
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>PRAXIS</h2>
       <p style={{ fontSize: 14, color: C.textMid, marginBottom: 16 }}>Wähle ein Szenario zum Üben, oder kombiniere mehrere.</p>
+
+      {dailyPhrase && (
+        <Card style={{ padding: "14px 16px", marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
+          <div style={{ fontSize: 11, color: C.red, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Dein Satz des Tages</div>
+          <div style={{ fontSize: 15, color: C.white, fontStyle: "italic", lineHeight: 1.5 }}>"{dailyPhrase.text}"</div>
+        </Card>
+      )}
 
       <Btn onClick={() => setMode("multiSelect")} style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text, marginBottom: 16 }}>
         🎯 Mehrere Szenarien kombinieren
@@ -569,6 +584,7 @@ function ReframerView({ reframes, setReframes, userId, record }) {
   };
 
   const deleteReframe = async (id) => {
+    if (!confirm("Reframe wirklich löschen?")) return;
     try { const t = await sb.from("iv_reframes"); await t.delete({ id }); setReframes(prev => prev.filter(x => x.id !== id)); } catch {}
   };
 
@@ -689,6 +705,7 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
   };
 
   const deleteEntry = async (id) => {
+    if (!confirm("Eintrag wirklich löschen?")) return;
     try { const t = await sb.from("iv_journal"); await t.delete({ id }); setJournal(prev => prev.filter(x => x.id !== id)); } catch {}
   };
 
