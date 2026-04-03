@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.3.2";
+const APP_VERSION = "2.4.1";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -35,9 +35,9 @@ const sb = {
 /* ── SEED SCENARIOS (für neue User) ── */
 const SEED_SCENARIOS = [
   { name: "Vor dem Training", icon: "⚡", description: "Mentale Vorbereitung vor der Session.", phrases: [
-    "Körper bereit. Kopf fokussiert.",
-    "Heute besser als gestern.",
-    "Dein Plan steht. Zieh durch.",
+    "Mein Körper ist bereit, mein Kopf ist fokussiert.",
+    "Heute werde ich besser sein als gestern.",
+    "Dein Plan steht. Zieh ihn durch.",
   ]},
   { name: "Während des Trainings", icon: "🔥", description: "Push-Modus. Dranbleiben.", phrases: [
     "Eine Wiederholung. Dann die nächste.",
@@ -45,59 +45,59 @@ const SEED_SCENARIOS = [
     "Du kannst mehr. Weiter.",
   ]},
   { name: "Bei Rückschlägen", icon: "🛡️", description: "Wenn es nicht läuft wie geplant.", phrases: [
-    "Teil des Weges. Weiter.",
-    "Mein Comeback definiert mich.",
-    "Aufstehen. Immer wieder aufstehen.",
+    "Rückschläge gehören zum Weg – sie sind ein Teil davon.",
+    "Das hier definiert mich nicht. Mein Comeback schon.",
+    "Aufstehen. Immer wieder aufstehen. Das zählt.",
   ]},
   { name: "Selbstvertrauen", icon: "👑", description: "Glaube an dich und deine Fähigkeiten.", phrases: [
-    "Du bist vorbereitet. Vertrau dir.",
-    "Ich bin genug.",
-    "Du schaffst das. Du weißt es.",
+    "Du hast dafür trainiert. Vertrau deiner Vorbereitung.",
+    "Ich bin genug – genau so, wie ich bin.",
+    "Du schaffst das. Tief in dir weißt du es.",
   ]},
   { name: "Wettkampftag", icon: "🏆", description: "Kurz vor dem Wettkampf. Anspannung nutzen.", phrases: [
-    "Vorbereitet. Bereit. Los.",
-    "Aufregung ist Energie. Nutze sie.",
+    "Ich bin vorbereitet. Ich bin bereit. Das ist mein Moment.",
+    "Aufregung ist Energie – ich nutze sie für mich.",
     "Ich konzentriere mich auf meinen Prozess, nicht auf das Ergebnis.",
   ]},
   { name: "Motivationstief", icon: "🔋", description: "Keine Lust, Zweifel am Sinn.", phrases: [
-    "Disziplin schlägt Motivation.",
-    "Einfach anfangen. Der Rest kommt.",
-    "Du zeigst heute auf. Das reicht.",
+    "Disziplin bringt mich weiter als Motivation es je könnte.",
+    "Ich muss mich nicht motiviert fühlen, um anzufangen.",
+    "Heute ist der Tag, an dem andere aufgeben. Ich zeige auf.",
   ]},
   { name: "Vergleich mit anderen", icon: "👥", description: "Du vergleichst dich mit anderen.", phrases: [
-    "Mein einziger Gegner: mein gestriges Ich.",
-    "Dein Weg. Dein Tempo.",
-    "Fokus auf deinen Fortschritt.",
+    "Mein einziger Gegner ist die Person, die ich gestern war.",
+    "Ich kenne ihren Weg nicht – ich kenne nur meinen eigenen.",
+    "Mein Fokus liegt auf meinem Fortschritt, nicht auf ihrem.",
   ]},
   { name: "Regeneration", icon: "🌱", description: "Nach dem Training. Loslassen und aufladen.", phrases: [
-    "Mein Bestes gegeben. Das reicht.",
-    "Erholung ist Training.",
+    "Ich habe heute mein Bestes gegeben – das ist genug.",
+    "Erholung gehört zum Training. Sie macht mich stärker.",
     "Stolz auf heute. Bereit für morgen.",
   ]},
   { name: "Fokus & Konzentration", icon: "🎯", description: "Ablenkungen loslassen, Präsenz stärken.", phrases: [
     "Jetzt. Hier. Dieser Moment.",
     "Meine Gedanken, meine Kontrolle.",
-    "Nur das Hier und Jetzt.",
+    "Nur das Hier und Jetzt zählt.",
   ]},
   { name: "Druck von außen", icon: "💬", description: "Erwartungen von Trainer, Familie oder Social Media.", phrases: [
-    "Ich trainiere für mich.",
-    "Meine Maßstäbe. Mein Weg.",
-    "Du bestimmst, was zählt.",
+    "Ich trainiere für mich – für niemand anderen.",
+    "Ich setze meine eigenen Maßstäbe und gehe meinen Weg.",
+    "Du bestimmst, was für dich zählt.",
   ]},
   { name: "Nach Verletzung", icon: "🩹", description: "Comeback nach einer Verletzungspause.", phrases: [
-    "Mein Körper heilt. Geduld.",
-    "Stärker zurück. Mental und physisch.",
-    "Was heute geht, ist genug.",
+    "Mein Körper heilt. Ich gebe ihm die Zeit, die er braucht.",
+    "Ich komme stärker zurück – mental und physisch.",
+    "Was heute möglich ist, ist genug. Der Rest kommt.",
   ]},
   { name: "Morgenroutine", icon: "☀️", description: "Den Tag mit der richtigen Einstellung starten.", phrases: [
-    "Guter Tag, um stärker zu werden.",
-    "Du entscheidest, wie der Tag wird.",
-    "Dein Mindset. Dein Erfolg.",
+    "Heute ist ein guter Tag, um stärker zu werden.",
+    "Du entscheidest, wie dieser Tag wird. Niemand sonst.",
+    "Mein Mindset bestimmt meinen Erfolg.",
   ]},
   { name: "Selbstzweifel", icon: "🌧️", description: "Wenn du an dir selbst zweifelst.", phrases: [
-    "Zweifel zeigen: Das hier ist dir wichtig.",
-    "Ich bin meine Taten.",
-    "Unperfekt und trotzdem stark.",
+    "Zweifel zeigen mir, dass mir das hier wirklich wichtig ist.",
+    "Ich bin nicht meine Gedanken. Ich bin das, was ich tue.",
+    "Ich darf unperfekt sein und trotzdem weitermachen.",
   ]},
   { name: "Technik & Präzision", icon: "🏹", description: "Instruktionale Cues für präzise Sportarten.", phrases: [
     "Ruhige Hand. Klarer Blick.",
@@ -1123,15 +1123,21 @@ function ScienceView({ goBack }) {
         <div style={{ fontSize: 13, fontWeight: 600, color: C.green, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>4 Prinzipien für wirksame Sätze</div>
 
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>1. Kurz und prägnant</div>
-          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Kurze Cue-Wörter (2–5 Wörter) sind im Wettkampf effektiver als lange Sätze. Im Moment der Belastung hat das Gehirn keine Kapazität für komplexe Formulierungen.</p>
-          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
-            <div style={{ flex: 1, padding: 8, background: "#DC262615", borderRadius: 6, fontSize: 12, color: "#F87171" }}>✗ "Ich konzentriere mich jetzt auf meinen Prozess und nicht auf das Ergebnis"</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.white, marginBottom: 4 }}>1. Die richtige Länge für den Moment</div>
+          <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginBottom: 6 }}>Die ideale Satzlänge hängt vom Kontext ab. Während der Ausführung braucht das Gehirn kurze Cues (2–5 Wörter). Bei Vorbereitung, Motivation oder Reflexion dürfen Sätze länger sein (5–15 Wörter) – sie verankern den Gedanken tiefer.</p>
+          <div style={{ background: C.surface, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: "#3B82F6", fontWeight: 600, marginBottom: 4 }}>WÄHREND DER AUSFÜHRUNG</div>
+            <div style={{ fontSize: 12, color: C.green }}>✓ "Spannung. Atmen. Ausführen."</div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={{ flex: 1, padding: 8, background: "#22C55E15", borderRadius: 6, fontSize: 12, color: C.green }}>✓ "Mein Prozess. Mein Tempo."</div>
+          <div style={{ background: C.surface, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: "#3B82F6", fontWeight: 600, marginBottom: 4 }}>VOR DEM TRAINING / REFLEXION</div>
+            <div style={{ fontSize: 12, color: C.green }}>✓ "Ich bin vorbereitet. Ich bin bereit. Das ist mein Moment."</div>
           </div>
-          <div style={{ marginTop: 4 }}><Ref>(Theodorakis et al., 2000)</Ref></div>
+          <div style={{ background: C.surface, borderRadius: 8, padding: 10 }}>
+            <div style={{ fontSize: 11, color: "#3B82F6", fontWeight: 600, marginBottom: 4 }}>BEI SELBSTZWEIFELN / EMOTION</div>
+            <div style={{ fontSize: 12, color: C.green }}>✓ "Zweifel zeigen mir, dass mir das hier wirklich wichtig ist."</div>
+          </div>
+          <div style={{ marginTop: 6 }}><Ref>(Theodorakis et al., 2000; Hardy, 2006)</Ref></div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
