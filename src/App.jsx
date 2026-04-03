@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "1.8.3";
+const APP_VERSION = "1.8.4";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -372,7 +372,7 @@ function HomeView({ weekDays, goalReached, go, isCoach }) {
           {goalReached ? `${weekDays} Tage geübt ✓` : `${weekDays} von ${GOAL} Tagen`}
         </div>
         <div style={{ fontSize: 12, color: goalReached ? C.green : C.textSoft, marginBottom: 12 }}>
-          {goalReached ? (weekDays > GOAL ? `Ziel erreicht + ${weekDays - GOAL} Bonustage!` : "Wochenziel erreicht!") : `Noch ${GOAL - weekDays} ${GOAL - weekDays === 1 ? "Tag" : "Tage"} bis zum Ziel`}
+          {goalReached ? (weekDays > GOAL ? `Wochenziel erreicht + ${weekDays - GOAL} Bonustage!` : "Wochenziel erreicht!") : `Noch ${GOAL - weekDays}× diese Woche üben`}
         </div>
         <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden" }}>
           <div style={{ height: "100%", background: goalReached ? C.green : C.red, borderRadius: 4, width: `${pct}%`, transition: "width 0.4s ease" }} />
