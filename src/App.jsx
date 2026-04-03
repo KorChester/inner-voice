@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.2.1";
+const APP_VERSION = "2.3.1";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -319,7 +319,7 @@ function MainApp({ user, onLogout }) {
     ...(isCoach ? [{ id: "coach", icon: "👁", label: "Coach" }] : []),
   ];
 
-  if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, color: C.textSoft }}>Deine innerre Stimmen werden geladen...</div>;
+  if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, color: C.textSoft }}>Daten werden geladen...</div>;
 
   return (
     <div style={{ paddingBottom: 82 }}>
@@ -328,7 +328,10 @@ function MainApp({ user, onLogout }) {
           <img src="/pu-logo.webp" alt="PU" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "contain" }} />
           <div><div style={{ fontSize: 13, fontWeight: 700, color: C.white }}>INNER VOICE</div><div style={{ fontSize: 10, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase" }}>{user.display_name} {isCoach && "· COACH"}</div></div>
         </div>
-        <button onClick={onLogout} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSoft, fontSize: 12, padding: "5px 12px", cursor: "pointer" }}>Logout</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => setView("progress")} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, color: view === "progress" ? C.red : C.textSoft, fontSize: 14, padding: "4px 10px", cursor: "pointer" }}>📊</button>
+          <button onClick={onLogout} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSoft, fontSize: 12, padding: "5px 12px", cursor: "pointer" }}>Logout</button>
+        </div>
       </header>
 
       <main>
@@ -337,6 +340,7 @@ function MainApp({ user, onLogout }) {
         {view === "reframer" && <ReframerView reframes={reframes} setReframes={setReframes} userId={user.id} record={recordSession} />}
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "science" && <ScienceView goBack={() => setView("home")} />}
+        {view === "progress" && <ProgressView journal={journal} sessions={sessions} userId={user.id} goBack={() => setView("home")} />}
         {view === "coach" && isCoach && <CoachDashboard clients={coachClients} />}
       </main>
 
@@ -899,6 +903,163 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
           ))}
         </>
       )}
+    </div>
+  );
+}
+
+/* ── PROGRESS VIEW ── */
+function ProgressView({ journal, sessions, userId, goBack }) {
+  const baselineKey = `iv_progress_baseline_${userId}`;
+  const [baseline, setBaseline] = useState(() => localStorage.getItem(baselineKey) || null);
+
+  // Filter data after baseline
+  const filteredSessions = baseline ? sessions.filter(s => new Date(s.created_at) >= new Date(baseline)) : sessions;
+  const filteredJournal = baseline ? journal.filter(j => new Date(j.created_at) >= new Date(baseline)) : journal;
+
+  // Calculate weekly summaries (last 8 weeks)
+  const getWeeks = () => {
+    const weeks = [];
+    const now = new Date();
+    for (let w = 0; w < 8; w++) {
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((now.getDay() + 6) % 7) - w * 7);
+      monday.setHours(0, 0, 0, 0);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 7);
+
+      // Skip weeks before baseline
+      if (baseline && sunday <= new Date(baseline)) continue;
+
+      const wSessions = filteredSessions.filter(s => { const d = new Date(s.created_at); return d >= monday && d < sunday; });
+      const wJournal = filteredJournal.filter(j => { const d = new Date(j.created_at); return d >= monday && d < sunday; });
+
+      const exerciseDays = [...new Set(wSessions.map(s => s.created_at.slice(0, 10)))].length;
+      const exerciseCount = wSessions.length;
+      const moods = wJournal.map(j => j.mood);
+      const moodAvg = moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length) : null;
+
+      const neg = wJournal.filter(j => j.self_talk_type === "negative").length;
+      const neu = wJournal.filter(j => j.self_talk_type === "neutral").length;
+      const pos = wJournal.filter(j => j.self_talk_type === "positive").length;
+      const total = neg + neu + pos;
+
+      weeks.push({
+        label: w === 0 ? "Diese Woche" : w === 1 ? "Letzte Woche" : `Vor ${w} Wochen`,
+        dateRange: `${monday.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} – ${new Date(sunday.getTime() - 86400000).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}`,
+        exerciseDays, exerciseCount, moodAvg, moods,
+        posPct: total ? Math.round(pos / total * 100) : 0,
+        neuPct: total ? Math.round(neu / total * 100) : 0,
+        negPct: total ? Math.round(neg / total * 100) : 0,
+        totalJournal: total,
+        isCurrent: w === 0,
+      });
+    }
+    return weeks;
+  };
+
+  const weeks = getWeeks();
+
+  const trend = (curr, prev) => {
+    if (prev === null || prev === undefined || curr === null || curr === undefined) return null;
+    if (curr > prev) return { arrow: "↗", color: C.green };
+    if (curr < prev) return { arrow: "↘", color: "#EF4444" };
+    return { arrow: "→", color: C.textSoft };
+  };
+
+  const resetProgress = () => {
+    if (!confirm("Fortschrittsverlauf zurücksetzen?\n\nDeine Daten (Journal, Reframes, Sessions) bleiben erhalten. Der Verlauf startet ab jetzt neu.")) return;
+    const now = new Date().toISOString();
+    localStorage.setItem(baselineKey, now);
+    setBaseline(now);
+  };
+
+  const undoReset = () => {
+    localStorage.removeItem(baselineKey);
+    setBaseline(null);
+  };
+
+  return (
+    <div style={{ padding: 16 }}>
+      <button onClick={goBack} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer", marginBottom: 14 }}>← Zurück</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, marginBottom: 4 }}>MEIN FORTSCHRITT</h2>
+      <p style={{ fontSize: 14, color: C.textMid, marginBottom: 18 }}>Dein Wochenverlauf auf einen Blick.</p>
+
+      {weeks.map((w, i) => {
+        const prev = weeks[i + 1];
+        const exTrend = prev ? trend(w.exerciseDays, prev.exerciseDays) : null;
+        const moodTrend = (w.moodAvg !== null && prev?.moodAvg !== null) ? trend(w.moodAvg, prev.moodAvg) : null;
+        const hasData = w.exerciseCount > 0 || w.totalJournal > 0;
+
+        return (
+          <Card key={i} style={{ padding: 16, marginBottom: 10, borderLeft: w.isCurrent ? `3px solid ${C.red}` : "none", opacity: hasData ? 1 : 0.5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{w.label}</div>
+              <div style={{ fontSize: 11, color: C.textSoft }}>{w.dateRange}</div>
+            </div>
+
+            {!hasData ? (
+              <div style={{ fontSize: 13, color: C.textSoft, fontStyle: "italic" }}>Keine Aktivitäten</div>
+            ) : (
+              <>
+                {/* Übungen */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, color: C.textMid }}>
+                    <strong style={{ color: C.white, fontSize: 16 }}>{w.exerciseDays}</strong> {w.exerciseDays === 1 ? "Tag" : "Tage"} geübt ({w.exerciseCount} {w.exerciseCount === 1 ? "Übung" : "Übungen"})
+                  </div>
+                  {exTrend && <span style={{ fontSize: 14, color: exTrend.color }}>{exTrend.arrow}</span>}
+                </div>
+
+                {/* Stimmung */}
+                {w.moodAvg !== null && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, color: C.textMid }}>
+                      Stimmung Ø <strong style={{ color: C.white }}>{w.moodAvg.toFixed(1)}</strong>/5
+                    </div>
+                    {moodTrend && <span style={{ fontSize: 14, color: moodTrend.color }}>{moodTrend.arrow}</span>}
+                  </div>
+                )}
+
+                {/* Mood mini bars */}
+                {w.moods.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 24, marginBottom: 8 }}>
+                    {w.moods.map((m, mi) => (
+                      <div key={mi} style={{ flex: 1, height: (m / 5) * 20 + 4, background: m >= 4 ? C.green : m >= 3 ? "#EAB308" : "#EF4444", borderRadius: 2, opacity: 0.7 }} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Self-Talk Verteilung */}
+                {w.totalJournal > 0 && (
+                  <div>
+                    <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
+                      {w.posPct > 0 && <div style={{ width: `${w.posPct}%`, background: C.green }} />}
+                      {w.neuPct > 0 && <div style={{ width: `${w.neuPct}%`, background: "#EAB308" }} />}
+                      {w.negPct > 0 && <div style={{ width: `${w.negPct}%`, background: "#EF4444" }} />}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: C.textSoft }}>
+                      <span>{w.posPct}% pos</span>
+                      <span>{w.neuPct}% neu</span>
+                      <span>{w.negPct}% neg</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+        );
+      })}
+
+      {/* Reset */}
+      <div style={{ textAlign: "center", marginTop: 20, marginBottom: 10 }}>
+        {baseline ? (
+          <>
+            <div style={{ fontSize: 12, color: C.textSoft, marginBottom: 8 }}>Verlauf startet ab {new Date(baseline).toLocaleDateString("de-DE")}</div>
+            <button onClick={undoReset} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer" }}>Reset rückgängig machen</button>
+          </>
+        ) : (
+          <button onClick={resetProgress} style={{ background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Verlauf zurücksetzen</button>
+        )}
+      </div>
     </div>
   );
 }
