@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.4.2";
+const APP_VERSION = "2.4.3";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -377,16 +377,6 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
   const recentMoods = journal.slice(0, 14).reverse();
   const moodAvg = recentMoods.length ? (recentMoods.reduce((s, j) => s + j.mood, 0) / recentMoods.length).toFixed(1) : null;
 
-  // Self-talk distribution
-  const last30 = journal.slice(0, 30);
-  const neg = last30.filter(j => j.self_talk_type === "negative").length;
-  const neu = last30.filter(j => j.self_talk_type === "neutral").length;
-  const pos = last30.filter(j => j.self_talk_type === "positive").length;
-  const total = neg + neu + pos;
-  const negPct = total ? Math.round(neg / total * 100) : 0;
-  const posPct = total ? Math.round(pos / total * 100) : 0;
-  const neuPct = total ? 100 - negPct - posPct : 0;
-
   const confettiColors = ["#DC2626", "#22C55E", "#EAB308", "#3B82F6", "#A855F7"];
 
   return (
@@ -454,23 +444,6 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
               const color = j.mood >= 4 ? C.green : j.mood >= 3 ? "#EAB308" : "#EF4444";
               return <div key={i} style={{ flex: 1, height: barH, background: color, borderRadius: 3, opacity: 0.8, transition: "height 0.3s" }} />;
             })}
-          </div>
-        </Card>
-      )}
-
-      {/* Self-Talk Verteilung */}
-      {total > 0 && (
-        <Card style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: C.textSoft, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Self-Talk Verteilung</div>
-          <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 8 }}>
-            {posPct > 0 && <div style={{ width: `${posPct}%`, background: C.green, transition: "width 0.4s" }} />}
-            {neuPct > 0 && <div style={{ width: `${neuPct}%`, background: "#EAB308", transition: "width 0.4s" }} />}
-            {negPct > 0 && <div style={{ width: `${negPct}%`, background: "#EF4444", transition: "width 0.4s" }} />}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-            <span style={{ color: C.green }}>Positiv {posPct}%</span>
-            <span style={{ color: "#EAB308" }}>Neutral {neuPct}%</span>
-            <span style={{ color: "#EF4444" }}>Negativ {negPct}%</span>
           </div>
         </Card>
       )}
