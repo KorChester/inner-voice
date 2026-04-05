@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.4.3";
+const APP_VERSION = "2.4.4";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -1212,7 +1212,7 @@ function CoachDashboard() {
     setLoading(true);
     try {
       const pt = await sb.from("iv_profiles");
-      const allClients = await pt.select("*", "&role=eq.client");
+      const allClients = await pt.select("*", "");
       setClients(allClients);
       if (!allClients.length) { setLoading(false); return; }
 
