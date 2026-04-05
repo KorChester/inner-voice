@@ -238,7 +238,6 @@ function MainApp({ user, onLogout }) {
   const [scenarios, setScenarios] = useState([]);
   const [journal, setJournal] = useState([]); const [reframes, setReframes] = useState([]);
   const [sessions, setSessions] = useState([]); const [loading, setLoading] = useState(true);
-  const [coachClients, setCoachClients] = useState([]);
   const isCoach = user.role === "coach";
 
   useEffect(() => { loadData(); }, []);
@@ -260,7 +259,6 @@ function MainApp({ user, onLogout }) {
       }
       setScenarios(rawScens.map(s => ({ ...s, phrases: rawScenP.filter(p => p.scenario_id === s.id) })));
       setReframes(rawRef); setJournal(rawJ); setSessions(rawS);
-      if (isCoach) { const pt = await sb.from("iv_profiles"); setCoachClients(await pt.select("*", "&role=eq.client")); }
     } catch (err) {
       console.error(err);
       if (err.message?.includes("JWT") || err.message?.includes("token")) {
@@ -341,7 +339,7 @@ function MainApp({ user, onLogout }) {
         {view === "journal" && <JournalView journal={journal} setJournal={setJournal} userId={user.id} record={recordSession} reload={loadData} />}
         {view === "science" && <ScienceView goBack={() => setView("home")} />}
         {view === "progress" && <ProgressView journal={journal} sessions={sessions} userId={user.id} goBack={() => setView("home")} />}
-        {view === "coach" && isCoach && <CoachDashboard clients={coachClients} />}
+        {view === "coach" && isCoach && <CoachDashboard />}
       </main>
 
       <nav style={{ display: "flex", justifyContent: "space-around", position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: `${C.surface}F5`, borderTop: `1px solid ${C.border}`, padding: "8px 0 14px", zIndex: 100, backdropFilter: "blur(12px)" }}>
@@ -1225,20 +1223,26 @@ function ScienceView({ goBack }) {
 }
 
 /* ── COACH DASHBOARD (Enhanced) ── */
-function CoachDashboard({ clients }) {
+function CoachDashboard() {
   const [selected, setSelected] = useState(null);
   const [clientData, setClientData] = useState(null);
   const [clientOverviews, setClientOverviews] = useState({});
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load overview data for ALL clients (for traffic light list)
+  // Load clients + overview data fresh every time dashboard opens
   useEffect(() => {
-    loadOverviews();
-  }, [clients]);
+    loadAll();
+  }, []);
 
-  const loadOverviews = async () => {
-    if (!clients.length) { setLoading(false); return; }
+  const loadAll = async () => {
+    setLoading(true);
     try {
+      const pt = await sb.from("iv_profiles");
+      const allClients = await pt.select("*", "&role=eq.client");
+      setClients(allClients);
+      if (!allClients.length) { setLoading(false); return; }
+
       const [sessionT, journalT] = await Promise.all(["iv_practice_sessions", "iv_journal"].map(t => sb.from(t)));
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
       const [allSessions, allJournal] = await Promise.all([
@@ -1247,7 +1251,7 @@ function CoachDashboard({ clients }) {
       ]);
 
       const overviews = {};
-      for (const client of clients) {
+      for (const client of allClients) {
         const cSessions = allSessions.filter(s => s.user_id === client.id);
         const cJournal = allJournal.filter(j => j.user_id === client.id);
 
