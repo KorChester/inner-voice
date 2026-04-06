@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.4.5";
+const APP_VERSION = "2.4.6";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -294,7 +294,7 @@ function MainApp({ user, onLogout }) {
     }
   };
 
-  const recordSession = async (type, count) => { try { const t = await sb.from("iv_practice_sessions"); const [s] = await t.insert({ user_id: user.id, session_type: type, phrases_count: count }); setSessions(p => [s, ...p]); } catch {} };
+  const recordSession = async (type, count, scenarioName) => { try { const t = await sb.from("iv_practice_sessions"); const [s] = await t.insert({ user_id: user.id, session_type: type, phrases_count: count, scenario_name: scenarioName || null }); setSessions(p => [s, ...p]); } catch {} };
 
   const calcWeeklyGoal = () => {
     const now = new Date();
@@ -557,7 +557,7 @@ function PraxisView({ scenarios, userId, record, reload }) {
           <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.5, color: C.white }}>"{p.text}"</div>
         </Card>
         <p style={{ fontSize: 13, color: C.textSoft, textAlign: "center", marginBottom: 18 }}>Lies den Satz laut vor. Wiederhole 2–3 mal.</p>
-        <Btn onClick={() => { if (idx < activePhrases.length - 1) setIdx(idx + 1); else { setDoneCount(activePhrases.length); record("practice", activePhrases.length); setMode("done"); } }}>
+        <Btn onClick={() => { if (idx < activePhrases.length - 1) setIdx(idx + 1); else { const scenName = selScens.length > 0 ? selScens.map(sid => scenarios.find(x => x.id === sid)?.name).filter(Boolean).join(", ") : sit?.name || ""; setDoneCount(activePhrases.length); record("practice", activePhrases.length, scenName); setMode("done"); } }}>
           {idx < activePhrases.length - 1 ? "Nächster Satz →" : "Session beenden ✓"}
         </Btn>
         <button onClick={reset} style={{ display: "block", margin: "12px auto", background: "none", border: "none", color: C.textSoft, fontSize: 13, cursor: "pointer" }}>Abbrechen</button>
