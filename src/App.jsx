@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.4.4";
+const APP_VERSION = "2.4.5";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -1261,8 +1261,8 @@ function CoachDashboard() {
         let status = "green";
         const hasData = cSessions.length > 0 || cJournal.length > 0;
         if (!hasData) { status = "new"; }
-        else if (daysSince > 7 || moodTrend === "falling" || negPct > 60) status = "red";
-        else if (daysSince > 3 || (moodTrend === "stable" && negPct > 40)) status = "yellow";
+        else if (moodTrend === "falling" || negPct > 60) status = "red";
+        else if (negPct > 40) status = "yellow";
 
         overviews[client.id] = { lastActive, daysSince, moodTrend, avgRecent, moods: moods.slice(0, 14).reverse(), negPct, posPct, neuPct: total ? 100 - negPct - posPct : 0, sessionsThisWeek, sessionsLastWeek, totalJournal: cJournal.length, totalSessions: cSessions.length, status };
       }
@@ -1287,7 +1287,7 @@ function CoachDashboard() {
   };
 
   const statusColors = { green: "#22C55E", yellow: "#EAB308", red: "#EF4444", new: "#06B6D4" };
-  const statusLabels = { green: "Gut dabei", yellow: "Aufmerksamkeit", red: "Eingreifen", new: "Neu" };
+  const statusLabels = { green: "Gut dabei", yellow: "Beobachten", red: "Eingreifen", new: "Neu" };
   const trendLabels = { rising: "↗ steigend", stable: "→ stabil", falling: "↘ sinkend" };
   const trendColors = { rising: C.green, stable: C.textSoft, falling: "#EF4444" };
 
