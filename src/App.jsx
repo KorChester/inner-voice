@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const APP_VERSION = "2.4.6";
+const APP_VERSION = "2.4.9";
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL = "https://supabase.physiques-unlimited.de";
@@ -8,10 +8,34 @@ const SUPABASE_ANON_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBh
 
 const sb = {
   token: null,
+  _refreshing: null,
   headers(extra = {}) {
     const h = { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json", ...extra };
     if (this.token) h["Authorization"] = `Bearer ${this.token}`;
     return h;
+  },
+  async refreshToken() {
+    if (this._refreshing) return this._refreshing;
+    this._refreshing = (async () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("iv_session") || "{}");
+        if (!saved.refreshToken) return false;
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: "POST", headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: saved.refreshToken })
+        });
+        const data = await res.json();
+        if (data.access_token) {
+          this.token = data.access_token;
+          localStorage.setItem("iv_session", JSON.stringify({ ...saved, token: data.access_token, refreshToken: data.refresh_token || saved.refreshToken }));
+          return true;
+        }
+      } catch {}
+      return false;
+    })();
+    const result = await this._refreshing;
+    this._refreshing = null;
+    return result;
   },
   async auth(action, body) {
     const url = action === "signup" ? `${SUPABASE_URL}/auth/v1/signup` : `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
@@ -22,12 +46,27 @@ const sb = {
     return data;
   },
   async signOut() { this.token = null; },
+  async _fetch(url, opts, retry = true) {
+    let r = await fetch(url, opts);
+    if ((r.status === 401 || r.status === 403) && retry) {
+      const refreshed = await this.refreshToken();
+      if (refreshed) {
+        opts.headers = { ...opts.headers, "Authorization": `Bearer ${this.token}` };
+        r = await fetch(url, opts);
+      } else {
+        // Refresh failed → session is dead → force logout
+        localStorage.removeItem("iv_session"); this.token = null; window.location.reload();
+        return r;
+      }
+    }
+    return r;
+  },
   async from(table) {
     return {
-      select: async (q = "*", f = "") => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${q}${f}`, { headers: sb.headers({ "Prefer": "return=representation" }) }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return r.json(); },
-      insert: async (rows) => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: sb.headers({ "Prefer": "return=representation" }), body: JSON.stringify(Array.isArray(rows) ? rows : [rows]) }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return r.json(); },
-      update: async (data, match) => { const f = Object.entries(match).map(([k, v]) => `${k}=eq.${v}`).join("&"); const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${f}`, { method: "PATCH", headers: sb.headers({ "Prefer": "return=representation" }), body: JSON.stringify(data) }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return r.json(); },
-      delete: async (match) => { const f = Object.entries(match).map(([k, v]) => `${k}=eq.${v}`).join("&"); const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${f}`, { method: "DELETE", headers: sb.headers() }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return true; }
+      select: async (q = "*", f = "") => { const r = await sb._fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${q}${f}`, { headers: sb.headers({ "Prefer": "return=representation" }) }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return r.json(); },
+      insert: async (rows) => { const r = await sb._fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: sb.headers({ "Prefer": "return=representation" }), body: JSON.stringify(Array.isArray(rows) ? rows : [rows]) }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return r.json(); },
+      update: async (data, match) => { const f = Object.entries(match).map(([k, v]) => `${k}=eq.${v}`).join("&"); const r = await sb._fetch(`${SUPABASE_URL}/rest/v1/${table}?${f}`, { method: "PATCH", headers: sb.headers({ "Prefer": "return=representation" }), body: JSON.stringify(data) }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return r.json(); },
+      delete: async (match) => { const f = Object.entries(match).map(([k, v]) => `${k}=eq.${v}`).join("&"); const r = await sb._fetch(`${SUPABASE_URL}/rest/v1/${table}?${f}`, { method: "DELETE", headers: sb.headers() }); if (!r.ok) { const e = await r.json(); throw new Error(e.message); } return true; }
     };
   }
 };
@@ -261,25 +300,6 @@ function MainApp({ user, onLogout }) {
       setReframes(rawRef); setJournal(rawJ); setSessions(rawS);
     } catch (err) {
       console.error(err);
-      if (err.message?.includes("JWT") || err.message?.includes("token")) {
-        // Try refresh before logging out
-        try {
-          const saved = JSON.parse(localStorage.getItem("iv_session") || "{}");
-          if (saved.refreshToken) {
-            const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-              method: "POST", headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-              body: JSON.stringify({ refresh_token: saved.refreshToken })
-            });
-            const data = await res.json();
-            if (data.access_token) {
-              sb.token = data.access_token;
-              localStorage.setItem("iv_session", JSON.stringify({ ...saved, token: data.access_token, refreshToken: data.refresh_token || saved.refreshToken }));
-              loadData(); return; // Retry
-            }
-          }
-        } catch {}
-        localStorage.removeItem("iv_session"); sb.token = null; window.location.reload(); return;
-      }
     }
     setLoading(false);
   };
@@ -302,8 +322,9 @@ function MainApp({ user, onLogout }) {
     const monday = new Date(now);
     monday.setDate(now.getDate() - ((day + 6) % 7));
     monday.setHours(0, 0, 0, 0);
-    const uniqueDays = [...new Set(sessions.filter(s => new Date(s.created_at) >= monday).map(s => s.created_at.slice(0, 10)))];
-    const today = now.toISOString().slice(0, 10);
+    const toLocalDate = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+    const uniqueDays = [...new Set(sessions.filter(s => new Date(s.created_at) >= monday).map(s => toLocalDate(s.created_at)))];
+    const today = toLocalDate(now);
     return { weekDays: uniqueDays.length, goalReached: uniqueDays.length >= 3, exercisedToday: uniqueDays.includes(today) };
   };
 
@@ -364,11 +385,12 @@ function HomeView({ weekDays, goalReached, exercisedToday, go, isCoach, userName
   const GOAL = 3;
   const pct = Math.min((weekDays / GOAL) * 100, 100);
 
-  // Confetti on goal reached (once per session)
+  // Confetti on goal reached (once per week)
+  const weekKey = `iv_confetti_${new Date().getFullYear()}_${Math.ceil((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / 604800000)}`;
   useEffect(() => {
-    if (goalReached && !sessionStorage.getItem("iv_confetti_shown")) {
+    if (goalReached && !localStorage.getItem(weekKey)) {
       setShowConfetti(true);
-      sessionStorage.setItem("iv_confetti_shown", "1");
+      localStorage.setItem(weekKey, "1");
       setTimeout(() => setShowConfetti(false), 3000);
     }
   }, [goalReached]);
@@ -536,7 +558,7 @@ function PraxisView({ scenarios, userId, record, reload }) {
           <input value={newPhrase} onChange={e => setNewPhrase(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && newPhrase.trim()) { try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} } }} placeholder="Neuen Satz hinzufügen..." style={{ ...inputStyle, flex: 1, padding: "8px 10px", fontSize: 13 }} />
           <button onClick={async () => { if (!newPhrase.trim()) return; try { const t = await sb.from("iv_scenario_phrases"); await t.insert({ user_id: userId, scenario_id: activeSit, text: newPhrase.trim() }); setNewPhrase(""); reload(); } catch {} }} style={{ width: 34, height: 34, borderRadius: 6, border: "none", background: C.red, color: C.white, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
         </div>
-        <button onClick={async () => { if (!confirm("Szenario wirklich löschen? Alle Sätze gehen verloren.")) return; try { const t = await sb.from("iv_scenarios"); await t.delete({ id: activeSit }); reload(); reset(); } catch {} }} style={{ display: "block", margin: "24px auto 0", background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Szenario löschen</button>
+        <button onClick={async () => { if (!confirm("Szenario wirklich löschen? Alle Sätze gehen verloren.")) return; try { const pt = await sb.from("iv_scenario_phrases"); await pt.delete({ scenario_id: activeSit }); const t = await sb.from("iv_scenarios"); await t.delete({ id: activeSit }); reload(); reset(); } catch {} }} style={{ display: "block", margin: "24px auto 0", background: "none", border: "none", color: "#F87171", fontSize: 13, cursor: "pointer" }}>Szenario löschen</button>
       </div>
     );
   }
@@ -740,7 +762,7 @@ function ReframerView({ reframes, setReframes, userId, record }) {
         <div style={{ textAlign: "center", fontSize: 20, color: C.red, margin: "8px 0" }}>⟲</div>
         <label style={{ fontSize: 12, fontWeight: 600, color: C.green, display: "block", marginBottom: 6 }}>POSITIVER REFRAME</label>
         <textarea value={pos} onChange={e => setPos(e.target.value)} placeholder='"Ich werde jeden Tag besser"' rows={2} style={inputStyle} />
-        <Btn onClick={save} disabled={!neg.trim() || !pos.trim()} style={{ marginTop: 10 }}>{saved ? "✓ Gespeichert!" : "Speichern"}</Btn>
+        <Btn onClick={save} disabled={!neg.trim() || !pos.trim() || saved} style={{ marginTop: 10 }}>{saved ? "✓ Gespeichert!" : "Speichern"}</Btn>
       </Card>
 
       <button onClick={() => setShowEx(!showEx)} style={{ background: "none", border: "none", color: C.red, fontSize: 13, cursor: "pointer" }}>{showEx ? "Beispiele ausblenden ▴" : "Beispiele ▾"}</button>
@@ -825,7 +847,7 @@ function JournalView({ journal, setJournal, userId, record, reload }) {
         </div>
         <Label>Gedanken</Label>
         <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Was ging dir durch den Kopf?" rows={3} style={{ ...inputStyle, marginBottom: 10 }} />
-        <Btn onClick={save} disabled={!text.trim()}>{saved ? "✓ Gespeichert!" : "Speichern"}</Btn>
+        <Btn onClick={save} disabled={!text.trim() || saved}>{saved ? "✓ Gespeichert!" : "Speichern"}</Btn>
       </Card>
 
       {journal.length > 0 && (
@@ -904,7 +926,7 @@ function ProgressView({ journal, sessions, userId, goBack }) {
       const wSessions = filteredSessions.filter(s => { const d = new Date(s.created_at); return d >= monday && d < sunday; });
       const wJournal = filteredJournal.filter(j => { const d = new Date(j.created_at); return d >= monday && d < sunday; });
 
-      const exerciseDays = [...new Set(wSessions.map(s => s.created_at.slice(0, 10)))].length;
+      const exerciseDays = [...new Set(wSessions.map(s => { const d = new Date(s.created_at); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }))].length;
       const exerciseCount = wSessions.length;
       const moods = wJournal.map(j => j.mood);
       const moodAvg = moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length) : null;
